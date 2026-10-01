@@ -1,0 +1,20 @@
+syntax = "proto3";
+
+package test.v1;
+
+enum Status {
+  STATUS_UNSPECIFIED = 0;
+  STATUS_ACTIVE = 1;
+}
+
+message User {
+  string name = 1;
+}
+
+enum Role {
+  ROLE_UNSPECIFIED = 0;
+}
+
+service UserService {
+  rpc GetUser(User) returns (User);
+}

@@ -1,0 +1,13 @@
+syntax = "proto3";
+
+package test.v1;
+
+import "google/protobuf/descriptor.proto";
+
+enum Color {
+  COLOR_UNSPECIFIED = 0;
+}
+
+extend google.protobuf.FieldOptions {
+  string color_tag = 50001;
+}

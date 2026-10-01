@@ -1,0 +1,11 @@
+syntax = "proto3";
+
+package test.v1;
+
+message User {
+  enum Kind {
+    KIND_UNSPECIFIED = 0;
+  }
+
+  Kind kind = 1;
+}

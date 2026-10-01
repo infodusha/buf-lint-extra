@@ -1,0 +1,13 @@
+syntax = "proto3";
+
+package test.v1;
+
+option go_package = "example.com/test/v1;testv1";
+
+enum Status {
+  STATUS_UNSPECIFIED = 0;
+}
+
+enum Role {
+  ROLE_UNSPECIFIED = 0;
+}

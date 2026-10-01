@@ -1,0 +1,7 @@
+syntax = "proto3";
+
+package test.v1;
+
+enum Role {
+  ROLE_UNSPECIFIED = 0;
+}

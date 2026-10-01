@@ -1,0 +1,9 @@
+syntax = "proto3";
+
+package test.v1;
+
+import "dep/dep_mixed.proto";
+
+message Wrapper {
+  test.dep.v1.DepStatus status = 1;
+}
