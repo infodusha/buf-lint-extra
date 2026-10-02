@@ -25,6 +25,10 @@ var (
 	fileDescriptorProtoService     = field{6, protowire.BytesType}
 	fileDescriptorProtoExtension   = field{7, protowire.BytesType}
 
+	descriptorProtoName       = field{1, protowire.BytesType}
+	descriptorProtoNestedType = field{3, protowire.BytesType}
+	descriptorProtoEnumType   = field{4, protowire.BytesType}
+
 	enumDescriptorProtoName = field{1, protowire.BytesType}
 )
 
@@ -86,7 +90,11 @@ func parseFileDescriptorProto(data []byte) (fileSummary, error) {
 		case fileDescriptorProtoName:
 			file.name = string(value)
 		case fileDescriptorProtoMessageType:
+			sourcePath := []int32{int32(f.number), int32(file.messages)}
 			file.messages++
+			var err error
+			file.nestedEnums, err = parseDescriptorProtoNestedEnums(file.nestedEnums, value, "", sourcePath)
+			return err
 		case fileDescriptorProtoEnumType:
 			name, err := parseEnumDescriptorProtoName(value)
 			if err != nil {
@@ -101,6 +109,54 @@ func parseFileDescriptorProto(data []byte) (fileSummary, error) {
 		return nil
 	})
 	return file, err
+}
+
+func parseDescriptorProtoNestedEnums(
+	nestedEnums []nestedEnum,
+	data []byte,
+	scope string,
+	sourcePath []int32,
+) ([]nestedEnum, error) {
+	var name string
+	var enums, messages [][]byte
+	err := rangeFields(data, func(f field, value []byte) error {
+		switch f {
+		case descriptorProtoName:
+			name = string(value)
+		case descriptorProtoEnumType:
+			enums = append(enums, value)
+		case descriptorProtoNestedType:
+			messages = append(messages, value)
+		}
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	name = qualifiedName(scope, name)
+	for i, enum := range enums {
+		enumName, err := parseEnumDescriptorProtoName(enum)
+		if err != nil {
+			return nil, err
+		}
+		nestedEnums = append(nestedEnums, nestedEnum{
+			name:       qualifiedName(name, enumName),
+			message:    name,
+			sourcePath: childSourcePath(sourcePath, descriptorProtoEnumType, i),
+		})
+	}
+	for i, message := range messages {
+		nestedEnums, err = parseDescriptorProtoNestedEnums(
+			nestedEnums,
+			message,
+			name,
+			childSourcePath(sourcePath, descriptorProtoNestedType, i),
+		)
+		if err != nil {
+			return nil, err
+		}
+	}
+	return nestedEnums, nil
 }
 
 func parseEnumDescriptorProtoName(data []byte) (string, error) {

@@ -1,0 +1,29 @@
+syntax = "proto3";
+
+package test.v1;
+
+message User {
+  enum Kind {
+    KIND_UNSPECIFIED = 0;
+  }
+
+  message Address {
+    enum Type {
+      TYPE_UNSPECIFIED = 0;
+    }
+
+    Type type = 1;
+  }
+
+  Kind kind = 1;
+  Address address = 2;
+  map<string, Address> addresses = 3;
+}
+
+message Team {
+  enum Visibility {
+    VISIBILITY_UNSPECIFIED = 0;
+  }
+
+  Visibility visibility = 1;
+}

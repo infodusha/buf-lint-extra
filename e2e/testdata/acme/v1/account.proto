@@ -8,5 +8,11 @@ enum Plan {
 }
 
 message Account {
+  // buf:lint:ignore ENUM_DEDICATED_FILE
+  enum Tier {
+    TIER_UNSPECIFIED = 0;
+  }
+
   Plan plan = 1;
+  Tier tier = 2;
 }

@@ -2,6 +2,7 @@ package rules
 
 import (
 	"context"
+	"slices"
 
 	"buf.build/go/bufplugin/check"
 	"buf.build/go/bufplugin/check/checkutil"
@@ -18,11 +19,18 @@ type rule struct {
 type checkFunc func(file fileSummary, options option.Options) ([]annotation, error)
 
 type fileSummary struct {
+	name        string
+	enums       []string
+	nestedEnums []nestedEnum
+	messages    int
+	services    int
+	extensions  int
+}
+
+type nestedEnum struct {
 	name       string
-	enums      []string
-	messages   int
-	services   int
-	extensions int
+	message    string
+	sourcePath []int32
 }
 
 type annotation struct {
@@ -68,5 +76,52 @@ func fileSummaryForDescriptor(fileDescriptor protoreflect.FileDescriptor) fileSu
 	for i := range enums.Len() {
 		file.enums[i] = string(enums.Get(i).Name())
 	}
+	messages := fileDescriptor.Messages()
+	for i := range messages.Len() {
+		file.nestedEnums = appendNestedEnums(
+			file.nestedEnums,
+			messages.Get(i),
+			"",
+			[]int32{int32(fileDescriptorProtoMessageType.number), int32(i)},
+		)
+	}
 	return file
+}
+
+func appendNestedEnums(
+	nestedEnums []nestedEnum,
+	message protoreflect.MessageDescriptor,
+	scope string,
+	sourcePath []int32,
+) []nestedEnum {
+	name := qualifiedName(scope, string(message.Name()))
+	enums := message.Enums()
+	for i := range enums.Len() {
+		nestedEnums = append(nestedEnums, nestedEnum{
+			name:       qualifiedName(name, string(enums.Get(i).Name())),
+			message:    name,
+			sourcePath: childSourcePath(sourcePath, descriptorProtoEnumType, i),
+		})
+	}
+	messages := message.Messages()
+	for i := range messages.Len() {
+		nestedEnums = appendNestedEnums(
+			nestedEnums,
+			messages.Get(i),
+			name,
+			childSourcePath(sourcePath, descriptorProtoNestedType, i),
+		)
+	}
+	return nestedEnums
+}
+
+func qualifiedName(scope, name string) string {
+	if scope == "" {
+		return name
+	}
+	return scope + "." + name
+}
+
+func childSourcePath(parent []int32, f field, index int) []int32 {
+	return append(slices.Clip(parent), int32(f.number), int32(index))
 }

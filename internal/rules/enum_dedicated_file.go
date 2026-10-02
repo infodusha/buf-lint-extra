@@ -14,30 +14,35 @@ var enumDedicatedFileRule = newRule(
 	&check.RuleSpec{
 		ID:      EnumDedicatedFileRuleID,
 		Default: true,
-		Purpose: "Checks that top-level enums are declared in dedicated files that contain no messages, services, or extensions.",
+		Purpose: "Checks that enums are declared at the top level of dedicated files that contain no messages, services, or extensions, and are not nested in messages.",
 		Type:    check.RuleTypeLint,
 	},
 	checkEnumDedicatedFile,
 )
 
 func checkEnumDedicatedFile(file fileSummary, _ option.Options) ([]annotation, error) {
-	if len(file.enums) == 0 {
-		return nil, nil
-	}
-	others := nonEnumDeclarations(file)
-	if others == "" {
-		return nil, nil
-	}
-	annotations := make([]annotation, len(file.enums))
-	for i, enum := range file.enums {
-		annotations[i] = annotation{
-			message: fmt.Sprintf(
-				"Enum %q must be declared in a dedicated file that contains only enums, but this file also declares %s.",
-				enum,
-				others,
-			),
-			sourcePath: []int32{int32(fileDescriptorProtoEnumType.number), int32(i)},
+	var annotations []annotation
+	if others := nonEnumDeclarations(file); others != "" {
+		for i, enum := range file.enums {
+			annotations = append(annotations, annotation{
+				message: fmt.Sprintf(
+					"Enum %q must be declared in a dedicated file that contains only enums, but this file also declares %s.",
+					enum,
+					others,
+				),
+				sourcePath: []int32{int32(fileDescriptorProtoEnumType.number), int32(i)},
+			})
 		}
+	}
+	for _, enum := range file.nestedEnums {
+		annotations = append(annotations, annotation{
+			message: fmt.Sprintf(
+				"Enum %q must be declared at the top level of a dedicated file that contains only enums, not nested in message %q.",
+				enum.name,
+				enum.message,
+			),
+			sourcePath: enum.sourcePath,
+		})
 	}
 	return annotations, nil
 }

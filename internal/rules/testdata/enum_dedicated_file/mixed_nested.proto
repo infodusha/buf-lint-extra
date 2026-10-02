@@ -2,10 +2,15 @@ syntax = "proto3";
 
 package test.v1;
 
+enum Status {
+  STATUS_UNSPECIFIED = 0;
+}
+
 message User {
   enum Kind {
     KIND_UNSPECIFIED = 0;
   }
 
-  Kind kind = 1;
+  Status status = 1;
+  Kind kind = 2;
 }

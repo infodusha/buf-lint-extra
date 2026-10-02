@@ -5,7 +5,7 @@ Extra lint rules for [buf](https://buf.build), packaged as a
 
 | Rule | Default | What it checks |
 | --- | --- | --- |
-| `ENUM_DEDICATED_FILE` | on | Top-level enums live in files that declare nothing but enums: no messages, services, or extensions. |
+| `ENUM_DEDICATED_FILE` | on | Enums live at the top level of files that declare nothing but enums: no messages, services, or extensions, and no enums nested in messages. |
 | `ENUM_FILE_SUFFIX` | off | Files that declare top-level enums have a name ending in a suffix (`_enum` by default), and files with that suffix declare top-level enums. |
 
 ## Installation
@@ -84,19 +84,32 @@ Everything else works as for the builtin rules: `except`, `ignore`,
 
 ### ENUM_DEDICATED_FILE
 
-Reports every top-level enum declared in a file that also declares messages,
-services, or extensions. Enums nested inside messages belong to their message
-and are not considered, so a message file with nested enums is fine, and a
-file with only file options, imports, and enums is fine too.
+Reports every enum that is not declared at the top level of a file containing
+only enums:
+
+- a top-level enum in a file that also declares messages, services, or
+  extensions;
+- an enum nested in a message, at any depth.
+
+Nested enums are reported because code generators emit them inside the module
+of their message. ts-proto, for example, generates `User.Role` as `User_Role`
+in the module of `User`, so code that needs only the enum has to import every
+message of that file. A file with only file options, imports, and enums is
+fine.
 
 ```proto
-// user.proto: flagged, Status has to move to its own file
+// user.proto: flagged, Status and Role have to move to their own file
 enum Status {
   STATUS_UNSPECIFIED = 0;
 }
 
 message User {
+  enum Role {
+    ROLE_UNSPECIFIED = 0;
+  }
+
   Status status = 1;
+  Role role = 2;
 }
 ```
 
@@ -113,10 +126,12 @@ enum Role {
 
 ```
 acme/v1/user.proto:5:1:Enum "Status" must be declared in a dedicated file that contains only enums, but this file also declares 1 message.
+acme/v1/user.proto:10:3:Enum "User.Role" must be declared at the top level of a dedicated file that contains only enums, not nested in message "User".
 ```
 
-The annotation is attached to the enum, so a single enum can be exempted with
-`// buf:lint:ignore ENUM_DEDICATED_FILE` on the line above it.
+The annotation is attached to the enum, so a single enum, top-level or nested,
+can be exempted with `// buf:lint:ignore ENUM_DEDICATED_FILE` on the line above
+it.
 
 ### ENUM_FILE_SUFFIX
 

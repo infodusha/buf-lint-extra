@@ -60,6 +60,13 @@ var expectedAnnotations = []annotation{
 		Message:     `File "acme/v1/kind.proto" declares top-level enums and must have a name ending in "_enums.proto", such as "acme/v1/kind_enums.proto".`,
 	},
 	{
+		Path:        "acme/v1/order.proto",
+		StartLine:   6,
+		StartColumn: 3,
+		Type:        "ENUM_DEDICATED_FILE",
+		Message:     `Enum "Order.State" must be declared at the top level of a dedicated file that contains only enums, not nested in message "Order".`,
+	},
+	{
 		Path:        "acme/v1/user.proto",
 		StartLine:   1,
 		StartColumn: 1,
