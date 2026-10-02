@@ -1,66 +1,58 @@
 package rules
 
 import (
-	"context"
 	"fmt"
 	"strings"
 
 	"buf.build/go/bufplugin/check"
-	"buf.build/go/bufplugin/check/checkutil"
-	"buf.build/go/bufplugin/descriptor"
-	"google.golang.org/protobuf/reflect/protoreflect"
+	"buf.build/go/bufplugin/option"
 )
 
 const EnumDedicatedFileRuleID = "ENUM_DEDICATED_FILE"
 
-var enumDedicatedFileRuleSpec = &check.RuleSpec{
-	ID:      EnumDedicatedFileRuleID,
-	Default: true,
-	Purpose: "Checks that top-level enums are declared in dedicated files that contain no messages, services, or extensions.",
-	Type:    check.RuleTypeLint,
-	Handler: checkutil.NewFileRuleHandler(checkEnumDedicatedFile, checkutil.WithoutImports()),
-}
+var enumDedicatedFileRule = newRule(
+	&check.RuleSpec{
+		ID:      EnumDedicatedFileRuleID,
+		Default: true,
+		Purpose: "Checks that top-level enums are declared in dedicated files that contain no messages, services, or extensions.",
+		Type:    check.RuleTypeLint,
+	},
+	checkEnumDedicatedFile,
+)
 
-func checkEnumDedicatedFile(
-	_ context.Context,
-	responseWriter check.ResponseWriter,
-	_ check.Request,
-	fileDescriptor descriptor.FileDescriptor,
-) error {
-	file := fileDescriptor.ProtoreflectFileDescriptor()
-	enums := file.Enums()
-	if enums.Len() == 0 {
-		return nil
+func checkEnumDedicatedFile(file fileSummary, _ option.Options) ([]annotation, error) {
+	if len(file.enums) == 0 {
+		return nil, nil
 	}
 	others := nonEnumDeclarations(file)
 	if others == "" {
-		return nil
+		return nil, nil
 	}
-	for i := range enums.Len() {
-		enum := enums.Get(i)
-		responseWriter.AddAnnotation(
-			check.WithMessagef(
+	annotations := make([]annotation, len(file.enums))
+	for i, enum := range file.enums {
+		annotations[i] = annotation{
+			message: fmt.Sprintf(
 				"Enum %q must be declared in a dedicated file that contains only enums, but this file also declares %s.",
-				enum.Name(),
+				enum,
 				others,
 			),
-			check.WithDescriptor(enum),
-		)
+			sourcePath: []int32{int32(fileDescriptorProtoEnumType.number), int32(i)},
+		}
 	}
-	return nil
+	return annotations, nil
 }
 
 // nonEnumDeclarations returns a summary such as "2 messages and 1 service",
 // or "" if the file declares nothing but enums.
-func nonEnumDeclarations(file protoreflect.FileDescriptor) string {
+func nonEnumDeclarations(file fileSummary) string {
 	var parts []string
 	for _, kind := range []struct {
 		count int
 		noun  string
 	}{
-		{file.Messages().Len(), "message"},
-		{file.Services().Len(), "service"},
-		{file.Extensions().Len(), "extension"},
+		{file.messages, "message"},
+		{file.services, "service"},
+		{file.extensions, "extension"},
 	} {
 		if kind.count == 0 {
 			continue

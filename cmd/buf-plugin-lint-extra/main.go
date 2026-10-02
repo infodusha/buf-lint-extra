@@ -2,11 +2,15 @@
 package main
 
 import (
-	"buf.build/go/bufplugin/check"
+	"runtime/debug"
+
+	"pluginrpc.com/pluginrpc"
 
 	"github.com/infodusha/buf-lint-extra/internal/rules"
 )
 
 func main() {
-	check.Main(rules.Spec)
+	debug.SetGCPercent(-1)
+	debug.SetMemoryLimit(512 << 20)
+	pluginrpc.Main(rules.NewServer)
 }

@@ -1,14 +1,11 @@
 package rules
 
 import (
-	"context"
 	"fmt"
 	"path"
 	"strings"
 
 	"buf.build/go/bufplugin/check"
-	"buf.build/go/bufplugin/check/checkutil"
-	"buf.build/go/bufplugin/descriptor"
 	"buf.build/go/bufplugin/option"
 )
 
@@ -23,62 +20,51 @@ const (
 	protoFileExtension = ".proto"
 )
 
-var enumFileSuffixRuleSpec = &check.RuleSpec{
-	ID:      EnumFileSuffixRuleID,
-	Default: false,
-	Purpose: `Checks that files declaring top-level enums have a name ending in a specific suffix (default is "_enum"), and that files with that suffix declare top-level enums.`,
-	Type:    check.RuleTypeLint,
-	Handler: checkutil.NewFileRuleHandler(checkEnumFileSuffix, checkutil.WithoutImports()),
-}
+var enumFileSuffixRule = newRule(
+	&check.RuleSpec{
+		ID:      EnumFileSuffixRuleID,
+		Default: false,
+		Purpose: `Checks that files declaring top-level enums have a name ending in a specific suffix (default is "_enum"), and that files with that suffix declare top-level enums.`,
+		Type:    check.RuleTypeLint,
+	},
+	checkEnumFileSuffix,
+)
 
-func checkEnumFileSuffix(
-	_ context.Context,
-	responseWriter check.ResponseWriter,
-	request check.Request,
-	fileDescriptor descriptor.FileDescriptor,
-) error {
-	suffix, err := enumFileSuffix(request.Options())
+func checkEnumFileSuffix(file fileSummary, options option.Options) ([]annotation, error) {
+	suffix, err := enumFileSuffix(options)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	file := fileDescriptor.ProtoreflectFileDescriptor()
-	fileName := file.Path()
-	stem := strings.TrimSuffix(path.Base(fileName), protoFileExtension)
+	stem := strings.TrimSuffix(path.Base(file.name), protoFileExtension)
 	hasSuffix := strings.HasSuffix(stem, suffix)
-	hasEnums := file.Enums().Len() > 0
+	hasEnums := len(file.enums) > 0
 	others := nonEnumDeclarations(file)
+	var message string
 	switch {
 	case hasEnums && !hasSuffix && others != "":
-		responseWriter.AddAnnotation(
-			check.WithMessagef(
-				"File %q declares top-level enums alongside %s, so the enums must move to a file with a name ending in %q.",
-				fileName,
-				others,
-				suffix+protoFileExtension,
-			),
-			check.WithFileName(fileName),
+		message = fmt.Sprintf(
+			"File %q declares top-level enums alongside %s, so the enums must move to a file with a name ending in %q.",
+			file.name,
+			others,
+			suffix+protoFileExtension,
 		)
 	case hasEnums && !hasSuffix:
-		responseWriter.AddAnnotation(
-			check.WithMessagef(
-				"File %q declares top-level enums and must have a name ending in %q, such as %q.",
-				fileName,
-				suffix+protoFileExtension,
-				path.Join(path.Dir(fileName), stem+suffix+protoFileExtension),
-			),
-			check.WithFileName(fileName),
+		message = fmt.Sprintf(
+			"File %q declares top-level enums and must have a name ending in %q, such as %q.",
+			file.name,
+			suffix+protoFileExtension,
+			path.Join(path.Dir(file.name), stem+suffix+protoFileExtension),
 		)
 	case hasSuffix && !hasEnums:
-		responseWriter.AddAnnotation(
-			check.WithMessagef(
-				"File %q has a name ending in %q but declares no top-level enums.",
-				fileName,
-				suffix+protoFileExtension,
-			),
-			check.WithFileName(fileName),
+		message = fmt.Sprintf(
+			"File %q has a name ending in %q but declares no top-level enums.",
+			file.name,
+			suffix+protoFileExtension,
 		)
+	default:
+		return nil, nil
 	}
-	return nil
+	return []annotation{{message: message}}, nil
 }
 
 func enumFileSuffix(options option.Options) (string, error) {
