@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.1](https://github.com/infodusha/buf-lint-extra/compare/v0.3.0...v0.3.1) (2026-10-02)
+
+
+### Bug Fixes
+
+* trigger release ([7d34e7d](https://github.com/infodusha/buf-lint-extra/commit/7d34e7dacf9d3d0b95f142546d66d26546a59689))
+
 ## [0.3.0](https://github.com/infodusha/buf-lint-extra/compare/v0.2.1...v0.3.0) (2026-10-02)
 
 
