@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.3.0](https://github.com/infodusha/buf-lint-extra/compare/v0.2.1...v0.3.0) (2026-10-02)
+
+
+### ⚠ BREAKING CHANGES
+
+* ENUM_DEDICATED_FILE, which is on by default, now reports enums nested in messages. Move them to the top level of a file that declares only enums, or ignore them.
+
+### Features
+
+* report enums nested in messages in ENUM_DEDICATED_FILE ([f5a1bbf](https://github.com/infodusha/buf-lint-extra/commit/f5a1bbf167c73f776a4f32979e4839052d168640))
+
+
+### Performance Improvements
+
+* speed up the plugin under Wasm ([0b4ea1c](https://github.com/infodusha/buf-lint-extra/commit/0b4ea1c8928342c6e4334978ede170e56d296772))
+
 ## [0.2.1](https://github.com/infodusha/buf-lint-extra/compare/v0.2.0...v0.2.1) (2026-10-02)
 
 
