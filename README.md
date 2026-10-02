@@ -10,6 +10,10 @@ Extra lint rules for [buf](https://buf.build), packaged as a
 
 ## Installation
 
+A native binary is the fastest option. `buf` runs the Wasm module in a
+runtime, which adds a few hundred milliseconds to every lint run, and several
+seconds to the first one while the module is compiled.
+
 Either install the native binary with Go:
 
 ```sh
@@ -22,6 +26,24 @@ and reference it by name, in which case `buf-plugin-lint-extra` must be on your
 ```yaml
 plugins:
   - plugin: buf-plugin-lint-extra
+```
+
+Or, on Linux, download the static binary for your architecture,
+`buf-plugin-lint-extra-Linux-x86_64` or `buf-plugin-lint-extra-Linux-aarch64`,
+from the [latest release](https://github.com/infodusha/buf-lint-extra/releases/latest):
+
+```sh
+curl -fsSL -o buf-plugin-lint-extra \
+  "https://github.com/infodusha/buf-lint-extra/releases/latest/download/buf-plugin-lint-extra-$(uname -s)-$(uname -m)"
+chmod +x buf-plugin-lint-extra
+```
+
+and reference it by name from your `PATH` as above, or by path, relative to the
+directory `buf` runs in:
+
+```yaml
+plugins:
+  - plugin: ./buf-plugin-lint-extra
 ```
 
 Or download `buf-plugin-lint-extra.wasm` from the
@@ -37,7 +59,7 @@ plugins:
 ```
 
 Each release attaches a SHA-256 checksum and a signed build provenance
-attestation for the module, which can be checked with the
+attestation for every binary and the module, which can be checked with the
 [GitHub CLI](https://cli.github.com):
 
 ```sh

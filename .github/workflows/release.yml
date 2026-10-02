@@ -19,7 +19,7 @@ jobs:
       - id: release
         uses: googleapis/release-please-action@45996ed1f6d02564a971a2fa1b5860e934307cf7 # v5.0.0
 
-  wasm:
+  assets:
     needs: release-please
     if: ${{ needs.release-please.outputs.release_created }}
     runs-on: ubuntu-latest
@@ -42,20 +42,27 @@ jobs:
           setup_only: true
       - run: go test ./...
       - name: Build Wasm plugin
-        run: GOOS=wasip1 GOARCH=wasm go build -trimpath -ldflags="-s -w" -o buf-plugin-lint-extra.wasm ./cmd/buf-plugin-lint-extra
-      - name: Write checksum
-        run: sha256sum buf-plugin-lint-extra.wasm > buf-plugin-lint-extra.wasm.sha256
+        run: GOOS=wasip1 GOARCH=wasm go build -trimpath -ldflags="-s -w" -o dist/buf-plugin-lint-extra.wasm ./cmd/buf-plugin-lint-extra
+      - name: Build Linux binaries
+        env:
+          CGO_ENABLED: "0"
+        run: |
+          GOOS=linux GOARCH=amd64 go build -trimpath -ldflags="-s -w" -o dist/buf-plugin-lint-extra-Linux-x86_64 ./cmd/buf-plugin-lint-extra
+          GOOS=linux GOARCH=arm64 go build -trimpath -ldflags="-s -w" -o dist/buf-plugin-lint-extra-Linux-aarch64 ./cmd/buf-plugin-lint-extra
       - name: Attest build provenance
         uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4.2.2
         with:
-          subject-path: buf-plugin-lint-extra.wasm
+          subject-path: dist/*
+      - name: Write checksums
+        working-directory: dist
+        run: for file in *; do sha256sum "$file" > "$file.sha256"; done
       - name: Upload release assets
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh release upload "$TAG_NAME" buf-plugin-lint-extra.wasm buf-plugin-lint-extra.wasm.sha256
+        run: gh release upload "$TAG_NAME" dist/*
 
   bsr:
-    needs: [release-please, wasm]
+    needs: [release-please, assets]
     if: ${{ needs.release-please.outputs.release_created }}
     runs-on: ubuntu-latest
     permissions:
