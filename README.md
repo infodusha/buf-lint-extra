@@ -26,14 +26,35 @@ plugins:
 
 Or download `buf-plugin-lint-extra.wasm` from the
 [latest release](https://github.com/infodusha/buf-lint-extra/releases/latest)
-and reference the file by path. No Go toolchain is needed, `buf` runs the
-WebAssembly module itself. The `.wasm` extension is required, it is how `buf`
-tells a Wasm plugin from a native binary:
+and reference the file by path, relative to the directory `buf` runs in. No Go
+toolchain is needed, `buf` runs the WebAssembly module itself. The `.wasm`
+extension is required, it is how `buf` tells a Wasm plugin from a native
+binary:
 
 ```yaml
 plugins:
   - plugin: ./buf-plugin-lint-extra.wasm
 ```
+
+Each release attaches a SHA-256 checksum and a signed build provenance
+attestation for the module, which can be checked with the
+[GitHub CLI](https://cli.github.com):
+
+```sh
+sha256sum --check buf-plugin-lint-extra.wasm.sha256
+gh attestation verify buf-plugin-lint-extra.wasm --repo infodusha/buf-lint-extra
+```
+
+Or reference the same module from the
+[Buf Schema Registry](https://buf.build/infodusha/lint-extra), so that `buf`
+downloads it and nothing has to be installed:
+
+```yaml
+plugins:
+  - plugin: buf.build/infodusha/lint-extra
+```
+
+and run `buf plugin update` to pin the plugin version in `buf.lock`.
 
 ## Configuration
 
@@ -114,6 +135,14 @@ acme/v1/status.proto:1:1:File "acme/v1/status.proto" declares top-level enums an
 acme/v1/color_enum.proto:1:1:File "acme/v1/color_enum.proto" has a name ending in "_enum.proto" but declares no top-level enums.
 ```
 
+When the file also declares messages, services, or extensions, renaming it
+would not help, so the rule asks for the enums to be moved out instead, in line
+with `ENUM_DEDICATED_FILE`:
+
+```
+acme/v1/user.proto:1:1:File "acme/v1/user.proto" declares top-level enums alongside 1 message, so the enums must move to a file with a name ending in "_enum.proto".
+```
+
 Annotations are reported at the file level, because the fix is to rename the
 file. Use `lint.ignore` or `lint.ignore_only` in `buf.yaml` to exclude paths.
 
@@ -135,6 +164,12 @@ Rules live in [internal/rules](internal/rules). Each rule is a
 [internal/rules/testdata](internal/rules/testdata) and compare the produced
 annotations with the expected ones.
 
+The end-to-end tests in [e2e](e2e) build the plugin both as a native binary and
+as a Wasm module, run `buf lint` with it on the module under
+[e2e/testdata](e2e/testdata), and check the reported annotations, including
+plugin options and both ways of ignoring them. They need `buf` on `PATH` and
+are skipped without it, except in CI, and with `go test -short`.
+
 ## Releases
 
 Releases are managed by
@@ -142,9 +177,12 @@ Releases are managed by
 `main` follow [Conventional Commits](https://www.conventionalcommits.org/);
 release-please keeps a release pull request up to date with the next version
 and changelog. Merging that pull request tags the release and publishes a
-GitHub release with `buf-plugin-lint-extra.wasm` and its SHA-256 checksum
-attached. Versions are `0.x` until the rules are declared stable, so breaking
-changes bump the minor version.
+GitHub release with `buf-plugin-lint-extra.wasm`, its SHA-256 checksum, and a
+build provenance attestation. The same module is then pushed to
+[buf.build/infodusha/lint-extra](https://buf.build/infodusha/lint-extra),
+labelled with both `main` and the release tag. That push needs a BSR token in
+the `BUF_TOKEN` repository secret. Versions are `0.x` until the rules are declared
+stable, so breaking changes bump the minor version.
 
 ## License
 

@@ -41,6 +41,17 @@ func TestEnumFileSuffixDefault(t *testing.T) {
 			},
 		},
 		{
+			name: "enum file with other declarations is told to move the enums instead of renaming",
+			file: "mixed.proto",
+			expectedAnnotations: []checktest.ExpectedAnnotation{
+				{
+					RuleID:       EnumFileSuffixRuleID,
+					Message:      `File "mixed.proto" declares top-level enums alongside 1 message and 1 service, so the enums must move to a file with a name ending in "_enum.proto".`,
+					FileLocation: &checktest.ExpectedFileLocation{FileName: "mixed.proto"},
+				},
+			},
+		},
+		{
 			name: "file with the suffix but without enums is flagged",
 			file: "color_enum.proto",
 			expectedAnnotations: []checktest.ExpectedAnnotation{
@@ -137,6 +148,38 @@ func TestEnumFileSuffixOption(t *testing.T) {
 			})
 		}
 	}
+}
+
+func TestEnumFileSuffixWithEnumDedicatedFile(t *testing.T) {
+	t.Parallel()
+	checktest.CheckTest{
+		Request: &checktest.RequestSpec{
+			Files: &checktest.ProtoFileSpec{
+				DirPaths:  []string{"testdata/enum_file_suffix"},
+				FilePaths: []string{"mixed.proto"},
+			},
+			RuleIDs: []string{EnumDedicatedFileRuleID, EnumFileSuffixRuleID},
+		},
+		Spec: Spec,
+		ExpectedAnnotations: []checktest.ExpectedAnnotation{
+			{
+				RuleID:  EnumDedicatedFileRuleID,
+				Message: `Enum "Status" must be declared in a dedicated file that contains only enums, but this file also declares 1 message and 1 service.`,
+				FileLocation: &checktest.ExpectedFileLocation{
+					FileName:    "mixed.proto",
+					StartLine:   4,
+					StartColumn: 0,
+					EndLine:     6,
+					EndColumn:   1,
+				},
+			},
+			{
+				RuleID:       EnumFileSuffixRuleID,
+				Message:      `File "mixed.proto" declares top-level enums alongside 1 message and 1 service, so the enums must move to a file with a name ending in "_enum.proto".`,
+				FileLocation: &checktest.ExpectedFileLocation{FileName: "mixed.proto"},
+			},
+		},
+	}.Run(t)
 }
 
 func TestEnumFileSuffixInvalidOption(t *testing.T) {

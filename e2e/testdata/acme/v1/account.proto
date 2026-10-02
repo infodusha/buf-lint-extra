@@ -1,0 +1,12 @@
+syntax = "proto3";
+
+package acme.v1;
+
+// buf:lint:ignore ENUM_DEDICATED_FILE
+enum Plan {
+  PLAN_UNSPECIFIED = 0;
+}
+
+message Account {
+  Plan plan = 1;
+}

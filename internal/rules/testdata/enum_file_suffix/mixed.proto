@@ -1,0 +1,15 @@
+syntax = "proto3";
+
+package test.v1;
+
+enum Status {
+  STATUS_UNSPECIFIED = 0;
+}
+
+message Account {
+  Status status = 1;
+}
+
+service AccountService {
+  rpc GetAccount(Account) returns (Account);
+}

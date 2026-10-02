@@ -30,3 +30,7 @@ go.work.sum
 # Editor/IDE
 # .idea/
 # .vscode/
+
+# Plugin binaries
+/buf-plugin-lint-extra
+*.wasm

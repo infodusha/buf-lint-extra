@@ -46,8 +46,18 @@ func checkEnumFileSuffix(
 	stem := strings.TrimSuffix(path.Base(fileName), protoFileExtension)
 	hasSuffix := strings.HasSuffix(stem, suffix)
 	hasEnums := file.Enums().Len() > 0
-	// Annotations are reported at the file level, as the fix is to rename the file.
+	others := nonEnumDeclarations(file)
 	switch {
+	case hasEnums && !hasSuffix && others != "":
+		responseWriter.AddAnnotation(
+			check.WithMessagef(
+				"File %q declares top-level enums alongside %s, so the enums must move to a file with a name ending in %q.",
+				fileName,
+				others,
+				suffix+protoFileExtension,
+			),
+			check.WithFileName(fileName),
+		)
 	case hasEnums && !hasSuffix:
 		responseWriter.AddAnnotation(
 			check.WithMessagef(
