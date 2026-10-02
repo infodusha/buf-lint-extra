@@ -77,7 +77,7 @@ jobs:
         env:
           BUF_TOKEN: ${{ secrets.BUF_TOKEN }}
         run: >-
-          buf plugin push buf.build/infodusha/lint-extra
+          buf plugin push buf.build/dusha/lint-extra
           --binary=buf-plugin-lint-extra.wasm
           --create
           --create-type=check

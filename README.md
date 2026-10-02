@@ -46,12 +46,12 @@ gh attestation verify buf-plugin-lint-extra.wasm --repo infodusha/buf-lint-extra
 ```
 
 Or reference the same module from the
-[Buf Schema Registry](https://buf.build/infodusha/lint-extra), so that `buf`
+[Buf Schema Registry](https://buf.build/dusha/lint-extra), so that `buf`
 downloads it and nothing has to be installed:
 
 ```yaml
 plugins:
-  - plugin: buf.build/infodusha/lint-extra
+  - plugin: buf.build/dusha/lint-extra
 ```
 
 and run `buf plugin update` to pin the plugin version in `buf.lock`.
@@ -179,7 +179,7 @@ release-please keeps a release pull request up to date with the next version
 and changelog. Merging that pull request tags the release and publishes a
 GitHub release with `buf-plugin-lint-extra.wasm`, its SHA-256 checksum, and a
 build provenance attestation. The same module is then pushed to
-[buf.build/infodusha/lint-extra](https://buf.build/infodusha/lint-extra),
+[buf.build/dusha/lint-extra](https://buf.build/dusha/lint-extra),
 labelled with both `main` and the release tag. That push needs a BSR token in
 the `BUF_TOKEN` repository secret. Versions are `0.x` until the rules are declared
 stable, so breaking changes bump the minor version.
