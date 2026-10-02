@@ -3,10 +3,10 @@
 Extra lint rules for [buf](https://buf.build), packaged as a
 [buf check plugin](https://buf.build/docs/cli/buf-plugins/overview/).
 
-| Rule | Default | What it checks |
-| --- | --- | --- |
-| `ENUM_DEDICATED_FILE` | on | Enums live at the top level of files that declare nothing but enums: no messages, services, or extensions, and no enums nested in messages. |
-| `ENUM_FILE_SUFFIX` | off | Files that declare top-level enums have a name ending in a suffix (`_enum` by default), and files with that suffix declare top-level enums. |
+| Rule                  | Default | What it checks                                                                                                                              |
+| --------------------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| `ENUM_DEDICATED_FILE` | on      | Enums live at the top level of files that declare nothing but enums: no messages, services, or extensions, and no enums nested in messages. |
+| `ENUM_FILE_SUFFIX`    | off     | Files that declare top-level enums have a name ending in a suffix (`_enum` by default), and files with that suffix declare top-level enums. |
 
 ## Installation
 
