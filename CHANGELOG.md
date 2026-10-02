@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.3.2](https://github.com/infodusha/buf-lint-extra/compare/v0.3.1...v0.3.2) (2026-10-02)
+
+
+### Bug Fixes
+
+* **deps:** bump github.com/google/cel-go from 0.27.0 to 0.29.0 ([eca5d72](https://github.com/infodusha/buf-lint-extra/commit/eca5d72790ef64fa01a84538c3395c890f96143c))
+* **deps:** bump github.com/google/cel-go from 0.27.0 to 0.29.0 ([#7](https://github.com/infodusha/buf-lint-extra/issues/7)) ([feb7fb6](https://github.com/infodusha/buf-lint-extra/commit/feb7fb6b3d0c9c43c428a1f66568d8ceac72ef6a))
+
 ## [0.3.1](https://github.com/infodusha/buf-lint-extra/compare/v0.3.0...v0.3.1) (2026-10-02)
 
 
