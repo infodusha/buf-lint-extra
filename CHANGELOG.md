@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.6.1](https://github.com/infodusha/buf-lint-extra/compare/v0.6.0...v0.6.1) (2026-10-09)
+
+
+### Bug Fixes
+
+* report files with more than one enum in ENUM_DEDICATED_FILE ([a92ba68](https://github.com/infodusha/buf-lint-extra/commit/a92ba682f5307debf4b1b5448eba8c9ca12dd06e))
+
 ## [0.6.0](https://github.com/infodusha/buf-lint-extra/compare/v0.5.0...v0.6.0) (2026-10-09)
 
 
