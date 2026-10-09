@@ -1,0 +1,7 @@
+syntax = "proto3";
+
+package Acme.HTTP_gateway.V1;
+
+message Route {
+  string path = 1;
+}

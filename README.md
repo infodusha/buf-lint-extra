@@ -7,6 +7,7 @@ Extra lint rules for [buf](https://buf.build), packaged as a
 | --------------------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
 | `ENUM_DEDICATED_FILE` | on      | Enums live at the top level of files that declare nothing but enums: no messages, services, or extensions, and no enums nested in messages. |
 | `ENUM_FILE_SUFFIX`    | off     | Files that declare top-level enums have a name ending in a suffix (`_enum` by default), and files with that suffix declare top-level enums. |
+| `PACKAGE_CAMEL_CASE`  | off     | Package names are camelCase: every dot-separated component starts with a lowercase letter and contains no underscores.                      |
 
 ## Installation
 
@@ -88,6 +89,9 @@ lint:
     - STANDARD # omit if you do not want to use the rules builtin to buf
     - ENUM_DEDICATED_FILE
     - ENUM_FILE_SUFFIX
+    - PACKAGE_CAMEL_CASE
+  except:
+    - PACKAGE_LOWER_SNAKE_CASE # part of STANDARD, contradicts PACKAGE_CAMEL_CASE
 plugins:
   - plugin: buf-plugin-lint-extra
     options:
@@ -184,6 +188,43 @@ Annotations are reported at the file level, because the fix is to rename the
 file. Use `lint.ignore` or `lint.ignore_only` in `buf.yaml` to exclude paths.
 
 The rule is off by default. Enable it by listing `ENUM_FILE_SUFFIX` in
+`lint.use`.
+
+### PACKAGE_CAMEL_CASE
+
+Checks that every dot-separated component of the package name is camelCase: it
+starts with a lowercase letter and contains no underscores. This is the
+camelCase counterpart of the builtin `PACKAGE_LOWER_SNAKE_CASE`, which wants
+`acme.user_service.v1` where this rule wants `acme.userService.v1`.
+
+Uppercase letters after the first one are accepted, so `acme.userAPI.v1` is
+fine, in the same way that the builtin `PASCAL_CASE` rules accept `HTTPServer`.
+Version components such as `v1` and `v1beta1` are camelCase already.
+
+```proto
+// flagged
+package acme.user_service.v1;
+```
+
+```proto
+// ok
+package acme.userService.v1;
+```
+
+```
+acme/user_service/v1/profile.proto:3:1:Package name "acme.user_service.v1" should be camelCase, such as "acme.userService.v1".
+```
+
+The annotation is attached to the `package` statement, so a file can be
+exempted with `// buf:lint:ignore PACKAGE_CAMEL_CASE` on the line above it.
+
+The rule contradicts `PACKAGE_LOWER_SNAKE_CASE`, which is part of the `BASIC`
+and `STANDARD` categories, so list that rule in `lint.except` when using one of
+them. `PACKAGE_DIRECTORY_MATCH` is unaffected and keeps asking for the
+directory to match the package, `acme/userService/v1/` in the example above;
+`FILE_LOWER_SNAKE_CASE` only looks at the file name, not at its directories.
+
+The rule is off by default. Enable it by listing `PACKAGE_CAMEL_CASE` in
 `lint.use`.
 
 ## Development

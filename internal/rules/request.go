@@ -20,6 +20,7 @@ var (
 	fileDescriptorIsImport            = field{2, protowire.VarintType}
 
 	fileDescriptorProtoName        = field{1, protowire.BytesType}
+	fileDescriptorProtoPackage     = field{2, protowire.BytesType}
 	fileDescriptorProtoMessageType = field{4, protowire.BytesType}
 	fileDescriptorProtoEnumType    = field{5, protowire.BytesType}
 	fileDescriptorProtoService     = field{6, protowire.BytesType}
@@ -89,6 +90,8 @@ func parseFileDescriptorProto(data []byte) (fileSummary, error) {
 		switch f {
 		case fileDescriptorProtoName:
 			file.name = string(value)
+		case fileDescriptorProtoPackage:
+			file.pkg = string(value)
 		case fileDescriptorProtoMessageType:
 			sourcePath := []int32{int32(f.number), int32(file.messages)}
 			file.messages++

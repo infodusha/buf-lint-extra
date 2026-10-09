@@ -24,6 +24,7 @@ lint:
   use:
     - ENUM_DEDICATED_FILE
     - ENUM_FILE_SUFFIX
+    - PACKAGE_CAMEL_CASE
   ignore_only:
     ENUM_FILE_SUFFIX:
       - acme/v1/account.proto
@@ -45,6 +46,13 @@ type annotation struct {
 }
 
 var expectedAnnotations = []annotation{
+	{
+		Path:        "acme/user_service/v1/profile.proto",
+		StartLine:   3,
+		StartColumn: 1,
+		Type:        "PACKAGE_CAMEL_CASE",
+		Message:     `Package name "acme.user_service.v1" should be camelCase, such as "acme.userService.v1".`,
+	},
 	{
 		Path:        "acme/v1/color_enums.proto",
 		StartLine:   1,

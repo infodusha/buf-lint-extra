@@ -1,0 +1,8 @@
+syntax = "proto3";
+
+// buf:lint:ignore PACKAGE_CAMEL_CASE
+package acme.legacy_api.v1;
+
+message Legacy {
+  string id = 1;
+}

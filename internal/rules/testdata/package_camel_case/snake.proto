@@ -1,0 +1,7 @@
+syntax = "proto3";
+
+package acme.user_service.v1;
+
+message Profile {
+  string name = 1;
+}

@@ -20,6 +20,7 @@ type checkFunc func(file fileSummary, options option.Options) ([]annotation, err
 
 type fileSummary struct {
 	name        string
+	pkg         string
 	enums       []string
 	nestedEnums []nestedEnum
 	messages    int
@@ -68,6 +69,7 @@ func fileSummaryForDescriptor(fileDescriptor protoreflect.FileDescriptor) fileSu
 	enums := fileDescriptor.Enums()
 	file := fileSummary{
 		name:       fileDescriptor.Path(),
+		pkg:        string(fileDescriptor.Package()),
 		enums:      make([]string, enums.Len()),
 		messages:   fileDescriptor.Messages().Len(),
 		services:   fileDescriptor.Services().Len(),

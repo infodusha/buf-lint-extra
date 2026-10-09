@@ -1,0 +1,5 @@
+syntax = "proto3";
+
+message Profile {
+  string name = 1;
+}
