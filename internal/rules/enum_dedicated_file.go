@@ -12,7 +12,7 @@ const EnumDedicatedFileRuleID = "ENUM_DEDICATED_FILE"
 var enumDedicatedFileRule = newRule(
 	&check.RuleSpec{
 		ID:      EnumDedicatedFileRuleID,
-		Default: true,
+		Default: false,
 		Purpose: "Checks that each enum is declared at the top level of a file of its own, with no other enums, messages, services, or extensions, and not nested in a message.",
 		Type:    check.RuleTypeLint,
 	},

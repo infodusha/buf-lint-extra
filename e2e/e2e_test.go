@@ -17,19 +17,13 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// bufYAML is formatted with the plugin reference. It covers plugin options,
-// lint.ignore_only, and comment ignores, which buf applies, not the plugin.
+// bufYAML is formatted with the plugin reference. It covers the EXTRA category,
+// plugin options, lint.ignore_only, and comment ignores, which buf applies, not
+// the plugin.
 const bufYAML = `version: v2
 lint:
   use:
-    - DIRECTORY_SAME_PACKAGE_EXTRA
-    - ENUM_DEDICATED_FILE
-    - ENUM_DEDICATED_PACKAGE
-    - ENUM_FILE_MATCH
-    - ENUM_FILE_SUFFIX
-    - FILE_LOWER_KEBAB_CASE
-    - PACKAGE_CAMEL_CASE
-    - PACKAGE_DIRECTORY_MATCH_EXTRA
+    - EXTRA
   ignore_only:
     ENUM_FILE_SUFFIX:
       - acme/v1/account.proto

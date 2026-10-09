@@ -6,7 +6,7 @@ Extra lint rules for [buf](https://buf.build), packaged as a
 | Rule                            | Default | What it checks                                                                                                                                                                      |
 | ------------------------------- | ------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `DIRECTORY_SAME_PACKAGE_EXTRA`  | off     | Files in a directory are in the same package, like the builtin rule, with enum files counted as files of their parent package when the enum component is left out of the directory. |
-| `ENUM_DEDICATED_FILE`           | on      | Each enum lives at the top level of a file of its own: no other enums, messages, services, or extensions, and no enums nested in messages.                                          |
+| `ENUM_DEDICATED_FILE`           | off     | Each enum lives at the top level of a file of its own: no other enums, messages, services, or extensions, and no enums nested in messages.                                          |
 | `ENUM_DEDICATED_PACKAGE`        | off     | Files that declare only enums have a package whose last component is the name of the enum, in any case style, so every enum gets a package of its own.                              |
 | `ENUM_FILE_MATCH`               | off     | Files that declare only enums are named after the enum, in any case style, with or without the enum file suffix.                                                                    |
 | `ENUM_FILE_SUFFIX`              | off     | Files that declare top-level enums have a name ending in a suffix (`_enum` by default), and files with that suffix declare top-level enums.                                         |
@@ -92,14 +92,7 @@ version: v2
 lint:
   use:
     - STANDARD # omit if you do not want to use the rules builtin to buf
-    - DIRECTORY_SAME_PACKAGE_EXTRA
-    - ENUM_DEDICATED_FILE
-    - ENUM_DEDICATED_PACKAGE
-    - ENUM_FILE_MATCH
-    - ENUM_FILE_SUFFIX
-    - FILE_LOWER_KEBAB_CASE
-    - PACKAGE_CAMEL_CASE
-    - PACKAGE_DIRECTORY_MATCH_EXTRA
+    - EXTRA # every rule of the plugin, or list the rules one by one
   except:
     - DIRECTORY_SAME_PACKAGE # part of STANDARD, replaced by DIRECTORY_SAME_PACKAGE_EXTRA
     - FILE_LOWER_SNAKE_CASE # part of STANDARD, contradicts FILE_LOWER_KEBAB_CASE
@@ -116,9 +109,12 @@ plugins:
 ```
 
 When `lint.use` is set, only the listed rules and categories run, so plugin
-rules must be listed explicitly. When `lint.use` is omitted, `buf` runs its
-`STANDARD` category plus the plugin's default rules, which is only
-`ENUM_DEDICATED_FILE`.
+rules must be listed explicitly, one by one or through the `EXTRA` category,
+which contains every rule of the plugin. A rule enabled through the category
+can still be turned off in `lint.except` and narrowed with `lint.ignore_only`,
+like a builtin rule enabled through `STANDARD`. When `lint.use` is omitted,
+`buf` runs its `STANDARD` category alone: no rule of the plugin is on by
+default.
 
 Everything else works as for the builtin rules: `except`, `ignore`,
 `ignore_only`, and `// buf:lint:ignore` comments.
@@ -217,6 +213,9 @@ acme/v1/enums.proto:5:1:Enum "Status" must be declared in a file of its own, but
 The annotation is attached to the enum, so a single enum, top-level or nested,
 can be exempted with `// buf:lint:ignore ENUM_DEDICATED_FILE` on the line above
 it.
+
+The rule is off by default. Enable it by listing `ENUM_DEDICATED_FILE` in
+`lint.use`.
 
 ### ENUM_DEDICATED_PACKAGE
 

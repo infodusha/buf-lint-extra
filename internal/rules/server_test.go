@@ -135,8 +135,15 @@ func TestServerProcedures(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, ruleIDsForRules(specRules), ruleIDsForRules(serverRules))
 
-	_, err = check.NewClient(serverPluginrpcClient).ListCategories(ctx)
+	specCategories, err := check.NewClient(specPluginrpcClient).ListCategories(ctx)
 	require.NoError(t, err)
+	serverCategories, err := check.NewClient(serverPluginrpcClient).ListCategories(ctx)
+	require.NoError(t, err)
+	require.Equal(t, categoryIDsForCategories(specCategories), categoryIDsForCategories(serverCategories))
+	require.Equal(t, []string{ExtraCategoryID}, categoryIDsForCategories(serverCategories))
+	for _, rule := range serverRules {
+		require.Equal(t, []string{ExtraCategoryID}, categoryIDsForCategories(rule.Categories()))
+	}
 
 	pluginInfo, err := info.NewClient(serverPluginrpcClient).GetPluginInfo(ctx)
 	require.NoError(t, err)
@@ -164,6 +171,14 @@ func summarizeAnnotations(response check.Response) []annotationSummary {
 		})
 	}
 	return summaries
+}
+
+func categoryIDsForCategories(categories []check.Category) []string {
+	ids := make([]string, len(categories))
+	for i, category := range categories {
+		ids[i] = category.ID()
+	}
+	return ids
 }
 
 func ruleIDsForRules(rules []check.Rule) []string {

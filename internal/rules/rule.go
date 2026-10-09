@@ -85,6 +85,7 @@ func newRule(spec *check.RuleSpec, checkFile checkFunc) rule {
 }
 
 func newFilesRule(spec *check.RuleSpec, checkFiles filesCheckFunc) rule {
+	spec.CategoryIDs = []string{ExtraCategoryID}
 	spec.Handler = check.RuleHandlerFunc(func(_ context.Context, responseWriter check.ResponseWriter, request check.Request) error {
 		var files []fileSummary
 		for _, fileDescriptor := range request.FileDescriptors() {
