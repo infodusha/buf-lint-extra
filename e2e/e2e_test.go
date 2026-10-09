@@ -26,6 +26,7 @@ lint:
     - ENUM_FILE_SUFFIX
     - FILE_LOWER_KEBAB_CASE
     - PACKAGE_CAMEL_CASE
+    - PACKAGE_DIRECTORY_MATCH_EXTRA
   ignore_only:
     ENUM_FILE_SUFFIX:
       - acme/v1/account.proto
@@ -33,6 +34,9 @@ plugins:
   - plugin: %s
     options:
       enum_file_suffix: -enums
+      package_directory_excluded_prefixes:
+        - legacy
+      package_directory_case: lower-kebab-case
 `
 
 // bufLintFailureExitCode is the exit code of buf lint when it reports annotations.
@@ -48,7 +52,14 @@ type annotation struct {
 
 var expectedAnnotations = []annotation{
 	{
-		Path:        "acme/user_service/v1/profile.proto",
+		Path:        "acme/billing/receipt.proto",
+		StartLine:   3,
+		StartColumn: 1,
+		Type:        "PACKAGE_DIRECTORY_MATCH_EXTRA",
+		Message:     `Files with package "legacy.acme.billing.v2" must be within a directory "acme/billing/v2" relative to root but were in directory "acme/billing".`,
+	},
+	{
+		Path:        "acme/user-service/v1/profile.proto",
 		StartLine:   3,
 		StartColumn: 1,
 		Type:        "PACKAGE_CAMEL_CASE",

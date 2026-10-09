@@ -11,12 +11,13 @@ var allRules = []rule{
 	enumFileSuffixRule,
 	fileLowerKebabCaseRule,
 	packageCamelCaseRule,
+	packageDirectoryMatchExtraRule,
 }
 
 var Spec = &check.Spec{
 	Rules: ruleSpecs(allRules),
 	Info: &info.Spec{
-		Documentation: "Extra lint rules for buf: keeps enums in dedicated files and checks naming conventions for enum files, file names, and packages.",
+		Documentation: "Extra lint rules for buf: keeps enums in dedicated files, checks naming conventions for enum files, file names, and packages, and matches packages to directories with configurable prefixes and case.",
 		SPDXLicenseID: "Apache-2.0",
 		LicenseURL:    "https://github.com/infodusha/buf-lint-extra/blob/main/LICENSE",
 	},

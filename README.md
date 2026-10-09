@@ -3,12 +3,13 @@
 Extra lint rules for [buf](https://buf.build), packaged as a
 [buf check plugin](https://buf.build/docs/cli/buf-plugins/overview/).
 
-| Rule                    | Default | What it checks                                                                                                                              |
-| ----------------------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
-| `ENUM_DEDICATED_FILE`   | on      | Enums live at the top level of files that declare nothing but enums: no messages, services, or extensions, and no enums nested in messages. |
-| `ENUM_FILE_SUFFIX`      | off     | Files that declare top-level enums have a name ending in a suffix (`_enum` by default), and files with that suffix declare top-level enums. |
-| `FILE_LOWER_KEBAB_CASE` | off     | File names are lower-kebab-case in each dot-separated segment, such as `user-service.proto` or `user-status.enum.proto`.                    |
-| `PACKAGE_CAMEL_CASE`    | off     | Package names are camelCase: every dot-separated component starts with a lowercase letter and contains no underscores.                      |
+| Rule                            | Default | What it checks                                                                                                                                             |
+| ------------------------------- | ------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `ENUM_DEDICATED_FILE`           | on      | Enums live at the top level of files that declare nothing but enums: no messages, services, or extensions, and no enums nested in messages.                |
+| `ENUM_FILE_SUFFIX`              | off     | Files that declare top-level enums have a name ending in a suffix (`_enum` by default), and files with that suffix declare top-level enums.                |
+| `FILE_LOWER_KEBAB_CASE`         | off     | File names are lower-kebab-case in each dot-separated segment, such as `user-service.proto` or `user-status.enum.proto`.                                   |
+| `PACKAGE_CAMEL_CASE`            | off     | Package names are camelCase: every dot-separated component starts with a lowercase letter and contains no underscores.                                     |
+| `PACKAGE_DIRECTORY_MATCH_EXTRA` | off     | Files are in the directory matching their package, like the builtin rule, after excluding configured package prefixes and converting to a configured case. |
 
 ## Installation
 
@@ -92,13 +93,18 @@ lint:
     - ENUM_FILE_SUFFIX
     - FILE_LOWER_KEBAB_CASE
     - PACKAGE_CAMEL_CASE
+    - PACKAGE_DIRECTORY_MATCH_EXTRA
   except:
     - FILE_LOWER_SNAKE_CASE # part of STANDARD, contradicts FILE_LOWER_KEBAB_CASE
     - PACKAGE_LOWER_SNAKE_CASE # part of STANDARD, contradicts PACKAGE_CAMEL_CASE
+    - PACKAGE_DIRECTORY_MATCH # part of STANDARD, replaced by PACKAGE_DIRECTORY_MATCH_EXTRA
 plugins:
   - plugin: buf-plugin-lint-extra
     options:
       enum_file_suffix: -enum # optional, the default is _enum
+      package_directory_excluded_prefixes: # optional, empty by default
+        - acme.v1
+      package_directory_case: lower-kebab-case # optional, components are used as is by default
 ```
 
 When `lint.use` is set, only the listed rules and categories run, so plugin
@@ -218,7 +224,8 @@ file. Use `lint.ignore` or `lint.ignore_only` in `buf.yaml` to exclude paths.
 
 The rule contradicts `FILE_LOWER_SNAKE_CASE`, which is part of the `STANDARD`
 category, so list that rule in `lint.except` when using it. Directories are
-not checked, so `PACKAGE_DIRECTORY_MATCH` is unaffected. When combined with
+not checked, so `PACKAGE_DIRECTORY_MATCH` is unaffected; to have kebab-case
+directories as well, see `PACKAGE_DIRECTORY_MATCH_EXTRA`. When combined with
 `ENUM_FILE_SUFFIX`, set `enum_file_suffix` to a kebab-case suffix such as
 `-enum`, or to a dotted one such as `.enum`, since the default `_enum` would
 be flagged.
@@ -258,10 +265,62 @@ The rule contradicts `PACKAGE_LOWER_SNAKE_CASE`, which is part of the `BASIC`
 and `STANDARD` categories, so list that rule in `lint.except` when using one of
 them. `PACKAGE_DIRECTORY_MATCH` is unaffected and keeps asking for the
 directory to match the package, `acme/userService/v1/` in the example above;
-`FILE_LOWER_SNAKE_CASE` only looks at the file name, not at its directories.
+`PACKAGE_DIRECTORY_MATCH_EXTRA` can map that to `acme/user-service/v1/`
+instead. `FILE_LOWER_SNAKE_CASE` only looks at the file name, not at its
+directories.
 
 The rule is off by default. Enable it by listing `PACKAGE_CAMEL_CASE` in
 `lint.use`.
+
+### PACKAGE_DIRECTORY_MATCH_EXTRA
+
+Checks that a file is in the directory, relative to the module root, that
+matches its package, with one directory per dot-separated component. Without
+options it behaves like the builtin `PACKAGE_DIRECTORY_MATCH`: files with
+package `acme.billing.v1` must be in `acme/billing/v1/`. Two options change
+how the expected directory is derived from the package.
+
+`package_directory_excluded_prefixes` lists package prefixes that are not
+expected in the directory. A prefix matches whole components, and when several
+match, the longest wins. With `acme.v1` excluded, files with package
+`acme.v1.billing` are checked as if their package were `billing`, so they must
+be in `billing/`. Files whose package is exactly an excluded prefix are not
+checked, like files without a package.
+
+`package_directory_case` converts each component to the case directories use,
+either `lower-kebab-case` or `lower_snake_case`. With `lower-kebab-case`, files
+with package `acme.mainGoal.v1` must be in `acme/main-goal/v1/`, and
+`acme/mainGoal/v1/` is reported, because the conversion is exact rather than
+case-insensitive. Components that are already in that case, such as `acme`
+and `v1`, are unchanged.
+
+```yaml
+plugins:
+  - plugin: buf-plugin-lint-extra
+    options:
+      package_directory_excluded_prefixes:
+        - legacy
+      package_directory_case: lower-kebab-case
+```
+
+With this configuration, files with package `legacy.acme.billing.v2` must be
+in `acme/billing/v2/`:
+
+```
+acme/billing/receipt.proto:3:1:Files with package "legacy.acme.billing.v2" must be within a directory "acme/billing/v2" relative to root but were in directory "acme/billing".
+```
+
+The annotation is attached to the `package` statement, so a file can be
+exempted with `// buf:lint:ignore PACKAGE_DIRECTORY_MATCH_EXTRA` on the line
+above it.
+
+The rule replaces `PACKAGE_DIRECTORY_MATCH`, which is part of the `MINIMAL`,
+`BASIC` and `STANDARD` categories, so list that rule in `lint.except` when
+using one of them, or both rules will check the same files with different
+expectations.
+
+The rule is off by default. Enable it by listing
+`PACKAGE_DIRECTORY_MATCH_EXTRA` in `lint.use`.
 
 ## Development
 

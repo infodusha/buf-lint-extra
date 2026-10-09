@@ -1,0 +1,7 @@
+syntax = "proto3";
+
+package legacy.acme.billing.v1;
+
+message Invoice {
+  string id = 1;
+}

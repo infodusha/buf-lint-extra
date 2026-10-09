@@ -48,14 +48,34 @@ func TestServerMatchesSpec(t *testing.T) {
 		}))
 		for _, file := range files {
 			for _, variant := range []struct {
-				name    string
-				ruleIDs []string
-				options map[string]any
+				name          string
+				ruleIDs       []string
+				options       map[string]any
+				errorContains string
 			}{
 				{name: "default rules"},
 				{name: "all rules", ruleIDs: ruleIDs},
-				{name: "all rules with suffix option", ruleIDs: ruleIDs, options: map[string]any{EnumFileSuffixOptionKey: "_enums"}},
-				{name: "invalid suffix option", ruleIDs: ruleIDs, options: map[string]any{EnumFileSuffixOptionKey: ".proto"}},
+				{
+					name:    "all rules with options",
+					ruleIDs: ruleIDs,
+					options: map[string]any{
+						EnumFileSuffixOptionKey:                   "_enums",
+						PackageDirectoryExcludedPrefixesOptionKey: []string{"test", "legacy"},
+						PackageDirectoryCaseOptionKey:             "lower-kebab-case",
+					},
+				},
+				{
+					name:          "invalid suffix option",
+					ruleIDs:       ruleIDs,
+					options:       map[string]any{EnumFileSuffixOptionKey: ".proto"},
+					errorContains: EnumFileSuffixOptionKey,
+				},
+				{
+					name:          "invalid case option",
+					ruleIDs:       ruleIDs,
+					options:       map[string]any{PackageDirectoryCaseOptionKey: "UPPER"},
+					errorContains: PackageDirectoryCaseOptionKey,
+				},
 			} {
 				t.Run(filepath.Join(dir, file)+"/"+variant.name, func(t *testing.T) {
 					t.Parallel()
@@ -71,10 +91,12 @@ func TestServerMatchesSpec(t *testing.T) {
 					require.NoError(t, err)
 					specResponse, specErr := specClient.Check(ctx, request)
 					serverResponse, serverErr := serverClient.Check(ctx, request)
-					if specErr != nil {
-						require.ErrorContains(t, serverErr, EnumFileSuffixOptionKey)
+					if variant.errorContains != "" {
+						require.ErrorContains(t, specErr, variant.errorContains)
+						require.ErrorContains(t, serverErr, variant.errorContains)
 						return
 					}
+					require.NoError(t, specErr)
 					require.NoError(t, serverErr)
 					require.Equal(t, summarizeAnnotations(specResponse), summarizeAnnotations(serverResponse))
 				})

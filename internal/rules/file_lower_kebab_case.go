@@ -43,10 +43,3 @@ func checkFileLowerKebabCase(file fileSummary, _ option.Options) ([]annotation, 
 		),
 	}}, nil
 }
-
-// toLowerKebabCase joins the words of s with hyphens in lowercase, so
-// "user_service", "UserService" and "HTTPServer" become "user-service" and
-// "http-server".
-func toLowerKebabCase(s string) string {
-	return strings.ToLower(strings.Join(splitWords(s), "-"))
-}

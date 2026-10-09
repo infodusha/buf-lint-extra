@@ -1,6 +1,20 @@
 package rules
 
-import "unicode"
+import (
+	"strings"
+	"unicode"
+)
+
+// toLowerKebabCase and toLowerSnakeCase join the words of s in lowercase, so
+// "user_service", "UserService" and "HTTPServer" become "user-service" and
+// "http-server", or "user_service" and "http_server".
+func toLowerKebabCase(s string) string {
+	return strings.ToLower(strings.Join(splitWords(s), "-"))
+}
+
+func toLowerSnakeCase(s string) string {
+	return strings.ToLower(strings.Join(splitWords(s), "_"))
+}
 
 func splitWords(s string) []string {
 	runes := []rune(s)

@@ -1,0 +1,7 @@
+syntax = "proto3";
+
+package acme.v1;
+
+message Root {
+  string id = 1;
+}
