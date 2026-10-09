@@ -94,10 +94,12 @@ lint:
     - STANDARD # omit if you do not want to use the rules builtin to buf
     - EXTRA # every rule of the plugin, or list the rules one by one
   except:
-    - DIRECTORY_SAME_PACKAGE # part of STANDARD, replaced by DIRECTORY_SAME_PACKAGE_EXTRA
-    - FILE_LOWER_SNAKE_CASE # part of STANDARD, contradicts FILE_LOWER_KEBAB_CASE
-    - PACKAGE_LOWER_SNAKE_CASE # part of STANDARD, contradicts PACKAGE_CAMEL_CASE
-    - PACKAGE_DIRECTORY_MATCH # part of STANDARD, replaced by PACKAGE_DIRECTORY_MATCH_EXTRA
+    - DIRECTORY_SAME_PACKAGE # replaced by DIRECTORY_SAME_PACKAGE_EXTRA
+    - PACKAGE_DIRECTORY_MATCH # replaced by PACKAGE_DIRECTORY_MATCH_EXTRA
+    - PACKAGE_VERSION_SUFFIX # contradicts ENUM_DEDICATED_PACKAGE
+    - PACKAGE_LOWER_SNAKE_CASE # replaced by PACKAGE_CAMEL_CASE
+    - FILE_LOWER_SNAKE_CASE # replaced by FILE_LOWER_KEBAB_CASE
+    - ENUM_VALUE_PREFIX # redundant with ENUM_DEDICATED_PACKAGE
 plugins:
   - plugin: buf-plugin-lint-extra
     options:
@@ -118,6 +120,13 @@ default.
 
 Everything else works as for the builtin rules: `except`, `ignore`,
 `ignore_only`, and `// buf:lint:ignore` comments.
+
+Every rule in `lint.except` above is part of `STANDARD` and clashes with a
+rule of the plugin, as described in the section of that rule; list only the
+entries for the plugin rules in use. The plugin cannot report such clashes
+itself: `buf` sends a plugin only the IDs of its own enabled rules, not the
+builtin ones, and not the path of `buf.yaml`; see
+[bufbuild/buf#4722](https://github.com/bufbuild/buf/issues/4722).
 
 ## Rules
 
@@ -261,6 +270,16 @@ files stay next to the files of the parent package; see its
 `DIRECTORY_SAME_PACKAGE` then reports those files as a second package in the
 directory, which `DIRECTORY_SAME_PACKAGE_EXTRA` counts as the parent package
 instead.
+
+The rule contradicts `PACKAGE_VERSION_SUFFIX`, which is part of the `STANDARD`
+category and wants the last component to be a version such as `v1`, so list
+that rule in `lint.except` when using it. `ENUM_VALUE_PREFIX`, also part of
+`STANDARD`, asks for every value to be prefixed with the name of its enum so
+that the values of the enums of one package do not clash. With every enum in a
+package of its own there is nothing to clash with, so the prefix can go: list
+that rule in `lint.except` as well, and set `enum_zero_value_suffix` to
+`UNSPECIFIED` under `lint`, since the builtin `ENUM_ZERO_VALUE_SUFFIX` expects
+`_UNSPECIFIED`.
 
 The rule is off by default. Enable it by listing `ENUM_DEDICATED_PACKAGE` in
 `lint.use`.
