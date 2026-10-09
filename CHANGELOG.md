@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.6.0](https://github.com/infodusha/buf-lint-extra/compare/v0.5.0...v0.6.0) (2026-10-09)
+
+
+### Features
+
+* add ENUM_FILE_MATCH rule ([5c291f7](https://github.com/infodusha/buf-lint-extra/commit/5c291f77df74403157ffdf4f85dcbebe5047a02b))
+
 ## [0.5.0](https://github.com/infodusha/buf-lint-extra/compare/v0.4.0...v0.5.0) (2026-10-09)
 
 
