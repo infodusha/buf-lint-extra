@@ -4,6 +4,7 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"buf.build/go/bufplugin/check"
@@ -46,7 +47,14 @@ func TestServerMatchesSpec(t *testing.T) {
 			}
 			return err
 		}))
+		fileSets := make([][]string, 0, len(files)+1)
 		for _, file := range files {
+			fileSets = append(fileSets, []string{file})
+		}
+		if dir == directorySamePackageExtraTestdataDir {
+			fileSets = append(fileSets, files)
+		}
+		for _, fileSet := range fileSets {
 			for _, variant := range []struct {
 				name          string
 				ruleIDs       []string
@@ -78,13 +86,13 @@ func TestServerMatchesSpec(t *testing.T) {
 					errorContains: PackageDirectoryCaseOptionKey,
 				},
 			} {
-				t.Run(filepath.Join(dir, file)+"/"+variant.name, func(t *testing.T) {
+				t.Run(filepath.Join(dir, strings.Join(fileSet, "+"))+"/"+variant.name, func(t *testing.T) {
 					t.Parallel()
 					ctx := t.Context()
 					request, err := (&checktest.RequestSpec{
 						Files: &checktest.ProtoFileSpec{
 							DirPaths:  []string{dir},
-							FilePaths: []string{file},
+							FilePaths: fileSet,
 						},
 						RuleIDs: variant.ruleIDs,
 						Options: variant.options,

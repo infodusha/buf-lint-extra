@@ -49,10 +49,8 @@ func checkPackageDirectoryMatchExtra(file fileSummary, request checkRequest) ([]
 		return nil, err
 	}
 	pkg := trimPackagePrefix(file.pkg, prefixes)
-	if excludeEnumComponent && file.declaresOnlyEnums() {
-		if parent, last := splitLastComponent(pkg); file.declaresEnumNamed(last) {
-			pkg = parent
-		}
+	if excludeEnumComponent {
+		pkg = trimEnumComponent(pkg, file)
 	}
 	if pkg == "" {
 		return nil, nil
@@ -141,4 +139,14 @@ func trimPackagePrefix(pkg string, prefixes []string) string {
 		}
 	}
 	return strings.TrimPrefix(strings.TrimPrefix(pkg, longest), ".")
+}
+
+// trimEnumComponent removes the last component of pkg when file declares
+// only enums and one of them is named after that component, so the package
+// ENUM_DEDICATED_PACKAGE asks for becomes its parent.
+func trimEnumComponent(pkg string, file fileSummary) string {
+	if parent, last := splitLastComponent(pkg); file.declaresOnlyEnums() && file.declaresEnumNamed(last) {
+		return parent
+	}
+	return pkg
 }

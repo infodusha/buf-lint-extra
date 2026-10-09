@@ -1,0 +1,7 @@
+syntax = "proto3";
+
+package app.other.foreign;
+
+enum Foreign {
+  FOREIGN_UNSPECIFIED = 0;
+}

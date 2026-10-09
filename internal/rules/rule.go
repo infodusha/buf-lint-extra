@@ -7,18 +7,18 @@ import (
 	"strings"
 
 	"buf.build/go/bufplugin/check"
-	"buf.build/go/bufplugin/check/checkutil"
-	"buf.build/go/bufplugin/descriptor"
 	"buf.build/go/bufplugin/option"
 	"google.golang.org/protobuf/proto"
 )
 
 type rule struct {
 	spec  *check.RuleSpec
-	check checkFunc
+	check filesCheckFunc
 }
 
 type checkFunc func(file fileSummary, request checkRequest) ([]annotation, error)
+
+type filesCheckFunc func(files []fileSummary, request checkRequest) ([]fileAnnotation, error)
 
 type checkRequest struct {
 	options option.Options
@@ -63,14 +63,34 @@ type annotation struct {
 	sourcePath []int32
 }
 
+type fileAnnotation struct {
+	fileName string
+	annotation
+}
+
 func newRule(spec *check.RuleSpec, checkFile checkFunc) rule {
-	spec.Handler = checkutil.NewFileRuleHandler(
-		func(
-			_ context.Context,
-			responseWriter check.ResponseWriter,
-			request check.Request,
-			fileDescriptor descriptor.FileDescriptor,
-		) error {
+	return newFilesRule(spec, func(files []fileSummary, request checkRequest) ([]fileAnnotation, error) {
+		var annotations []fileAnnotation
+		for _, file := range files {
+			fileAnnotations, err := checkFile(file, request)
+			if err != nil {
+				return nil, err
+			}
+			for _, a := range fileAnnotations {
+				annotations = append(annotations, fileAnnotation{fileName: file.name, annotation: a})
+			}
+		}
+		return annotations, nil
+	})
+}
+
+func newFilesRule(spec *check.RuleSpec, checkFiles filesCheckFunc) rule {
+	spec.Handler = check.RuleHandlerFunc(func(_ context.Context, responseWriter check.ResponseWriter, request check.Request) error {
+		var files []fileSummary
+		for _, fileDescriptor := range request.FileDescriptors() {
+			if fileDescriptor.IsImport() {
+				continue
+			}
 			data, err := proto.Marshal(fileDescriptor.FileDescriptorProto())
 			if err != nil {
 				return err
@@ -79,21 +99,21 @@ func newRule(spec *check.RuleSpec, checkFile checkFunc) rule {
 			if err != nil {
 				return err
 			}
-			annotations, err := checkFile(file, checkRequest{options: request.Options(), ruleIDs: request.RuleIDs()})
-			if err != nil {
-				return err
-			}
-			for _, annotation := range annotations {
-				responseWriter.AddAnnotation(
-					check.WithMessage(annotation.message),
-					check.WithFileNameAndSourcePath(file.name, annotation.sourcePath),
-				)
-			}
-			return nil
-		},
-		checkutil.WithoutImports(),
-	)
-	return rule{spec: spec, check: checkFile}
+			files = append(files, file)
+		}
+		annotations, err := checkFiles(files, checkRequest{options: request.Options(), ruleIDs: request.RuleIDs()})
+		if err != nil {
+			return err
+		}
+		for _, a := range annotations {
+			responseWriter.AddAnnotation(
+				check.WithMessage(a.message),
+				check.WithFileNameAndSourcePath(a.fileName, a.sourcePath),
+			)
+		}
+		return nil
+	})
+	return rule{spec: spec, check: checkFiles}
 }
 
 func splitLastComponent(pkg string) (parent, last string) {

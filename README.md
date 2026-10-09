@@ -3,15 +3,16 @@
 Extra lint rules for [buf](https://buf.build), packaged as a
 [buf check plugin](https://buf.build/docs/cli/buf-plugins/overview/).
 
-| Rule                            | Default | What it checks                                                                                                                                                        |
-| ------------------------------- | ------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `ENUM_DEDICATED_FILE`           | on      | Each enum lives at the top level of a file of its own: no other enums, messages, services, or extensions, and no enums nested in messages.                            |
-| `ENUM_DEDICATED_PACKAGE`        | off     | Files that declare only enums have a package whose last component is the name of the enum, in any case style, so every enum gets a package of its own.                |
-| `ENUM_FILE_MATCH`               | off     | Files that declare only enums are named after the enum, in any case style, with or without the enum file suffix.                                                      |
-| `ENUM_FILE_SUFFIX`              | off     | Files that declare top-level enums have a name ending in a suffix (`_enum` by default), and files with that suffix declare top-level enums.                           |
-| `FILE_LOWER_KEBAB_CASE`         | off     | File names are lower-kebab-case in each dot-separated segment, such as `user-service.proto` or `user-status.enum.proto`.                                              |
-| `PACKAGE_CAMEL_CASE`            | off     | Package names are camelCase: every dot-separated component starts with a lowercase letter and contains no underscores.                                                |
-| `PACKAGE_DIRECTORY_MATCH_EXTRA` | off     | Files are in the directory matching their package, like the builtin rule, with options to exclude prefixes, convert the case, and leave out the enum's own component. |
+| Rule                            | Default | What it checks                                                                                                                                                                      |
+| ------------------------------- | ------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `DIRECTORY_SAME_PACKAGE_EXTRA`  | off     | Files in a directory are in the same package, like the builtin rule, with enum files counted as files of their parent package when the enum component is left out of the directory. |
+| `ENUM_DEDICATED_FILE`           | on      | Each enum lives at the top level of a file of its own: no other enums, messages, services, or extensions, and no enums nested in messages.                                          |
+| `ENUM_DEDICATED_PACKAGE`        | off     | Files that declare only enums have a package whose last component is the name of the enum, in any case style, so every enum gets a package of its own.                              |
+| `ENUM_FILE_MATCH`               | off     | Files that declare only enums are named after the enum, in any case style, with or without the enum file suffix.                                                                    |
+| `ENUM_FILE_SUFFIX`              | off     | Files that declare top-level enums have a name ending in a suffix (`_enum` by default), and files with that suffix declare top-level enums.                                         |
+| `FILE_LOWER_KEBAB_CASE`         | off     | File names are lower-kebab-case in each dot-separated segment, such as `user-service.proto` or `user-status.enum.proto`.                                                            |
+| `PACKAGE_CAMEL_CASE`            | off     | Package names are camelCase: every dot-separated component starts with a lowercase letter and contains no underscores.                                                              |
+| `PACKAGE_DIRECTORY_MATCH_EXTRA` | off     | Files are in the directory matching their package, like the builtin rule, with options to exclude prefixes, convert the case, and leave out the enum's own component.               |
 
 ## Installation
 
@@ -91,6 +92,7 @@ version: v2
 lint:
   use:
     - STANDARD # omit if you do not want to use the rules builtin to buf
+    - DIRECTORY_SAME_PACKAGE_EXTRA
     - ENUM_DEDICATED_FILE
     - ENUM_DEDICATED_PACKAGE
     - ENUM_FILE_MATCH
@@ -99,6 +101,7 @@ lint:
     - PACKAGE_CAMEL_CASE
     - PACKAGE_DIRECTORY_MATCH_EXTRA
   except:
+    - DIRECTORY_SAME_PACKAGE # part of STANDARD, replaced by DIRECTORY_SAME_PACKAGE_EXTRA
     - FILE_LOWER_SNAKE_CASE # part of STANDARD, contradicts FILE_LOWER_KEBAB_CASE
     - PACKAGE_LOWER_SNAKE_CASE # part of STANDARD, contradicts PACKAGE_CAMEL_CASE
     - PACKAGE_DIRECTORY_MATCH # part of STANDARD, replaced by PACKAGE_DIRECTORY_MATCH_EXTRA
@@ -121,6 +124,51 @@ Everything else works as for the builtin rules: `except`, `ignore`,
 `ignore_only`, and `// buf:lint:ignore` comments.
 
 ## Rules
+
+### DIRECTORY_SAME_PACKAGE_EXTRA
+
+Checks that all files in a directory are in the same package, like the builtin
+`DIRECTORY_SAME_PACKAGE`, with one difference: when
+`package_directory_enum_component` is `excluded`, a file that declares only
+enums, with a package whose last component is the name of one of them in any
+case style, counts as a file of the parent package. An enum file `Dedicated`
+with package `app.test.dedicated` counts as `app.test`, so it can sit in
+`app/test/` next to the files of `app.test`, where
+`PACKAGE_DIRECTORY_MATCH_EXTRA` puts it and where the builtin rule reports it.
+Enum files whose last component is not an enum name, and files that also
+declare messages, services, or extensions, count with their full package. The
+option is read as for `PACKAGE_DIRECTORY_MATCH_EXTRA`: when it is not set, the
+component is `excluded` if `ENUM_DEDICATED_PACKAGE` is enabled and `included`
+otherwise.
+
+The other options of `PACKAGE_DIRECTORY_MATCH_EXTRA` do not apply. An excluded
+prefix and the case conversion change where a package is expected, not which
+packages are the same: `legacy.billing.v1` and `billing.v1` are two packages
+even with `legacy` excluded, and so are `acme.mainGoal.v1` and
+`acme.main_goal.v1` with `lower-kebab-case`. `PACKAGE_DIRECTORY_MATCH_EXTRA`
+accepts both files of each pair in one directory, so this rule is what reports
+them.
+
+Every file of a directory with more than one package is reported, with the
+packages as counted, so an enum file counted as its parent package is listed
+under the parent. A file without a package counts as a package of its own.
+
+```
+app/test/holder.proto:3:1:Multiple packages "app.other,app.test" detected within directory "app/test".
+acme/v1/user.proto:3:1:Package "acme.v1" and file with no package detected within directory "acme/v1".
+```
+
+The annotation is attached to the `package` statement, or to the file when it
+has none. Since every file of the directory is reported, exempting one of them
+with a comment does not help; use `lint.ignore` or `lint.ignore_only` in
+`buf.yaml` to exclude a directory.
+
+The rule replaces `DIRECTORY_SAME_PACKAGE`, which is part of the `MINIMAL`,
+`BASIC` and `STANDARD` categories, so list that rule in `lint.except` when
+using one of them, or the builtin rule keeps reporting the enum files.
+
+The rule is off by default. Enable it by listing
+`DIRECTORY_SAME_PACKAGE_EXTRA` in `lint.use`.
 
 ### ENUM_DEDICATED_FILE
 
@@ -210,7 +258,10 @@ Such packages add a directory per enum under the builtin
 `PACKAGE_DIRECTORY_MATCH`. `PACKAGE_DIRECTORY_MATCH_EXTRA` leaves that
 component out of the directory whenever this rule is enabled, so the enum
 files stay next to the files of the parent package; see its
-`package_directory_enum_component` option.
+`package_directory_enum_component` option. The builtin
+`DIRECTORY_SAME_PACKAGE` then reports those files as a second package in the
+directory, which `DIRECTORY_SAME_PACKAGE_EXTRA` counts as the parent package
+instead.
 
 The rule is off by default. Enable it by listing `ENUM_DEDICATED_PACKAGE` in
 `lint.use`.
@@ -386,6 +437,8 @@ also declare messages, services, or extensions, keep the full package. With
 not set, the component is `excluded` if `ENUM_DEDICATED_PACKAGE` is enabled,
 that is listed in `lint.use` and not in `lint.except`, and `included`
 otherwise, so the two rules agree on the layout unless told otherwise.
+`DIRECTORY_SAME_PACKAGE_EXTRA` reads the option the same way and counts such
+an enum file as a file of the parent package.
 
 The excluded prefix is removed first, then the enum component, and the rest is
 converted. If nothing is left, the file is not checked, like a file without a
@@ -416,7 +469,9 @@ above it.
 The rule replaces `PACKAGE_DIRECTORY_MATCH`, which is part of the `MINIMAL`,
 `BASIC` and `STANDARD` categories, so list that rule in `lint.except` when
 using one of them, or both rules will check the same files with different
-expectations.
+expectations. With the enum component excluded, the builtin
+`DIRECTORY_SAME_PACKAGE` reports the enum files as a second package in their
+directory, so replace it with `DIRECTORY_SAME_PACKAGE_EXTRA` as well.
 
 The rule is off by default. Enable it by listing
 `PACKAGE_DIRECTORY_MATCH_EXTRA` in `lint.use`.
@@ -431,7 +486,8 @@ GOOS=wasip1 GOARCH=wasm go build -o buf-plugin-lint-extra.wasm ./cmd/buf-plugin-
 
 Rules live in [internal/rules](internal/rules). Each rule is a function from
 a `fileSummary`, the few facts about a file that the rules look at, to
-annotations. It is registered as a `check.RuleSpec` of
+annotations, or, for `DIRECTORY_SAME_PACKAGE_EXTRA`, from the summaries of
+all the files of a request. It is registered as a `check.RuleSpec` of
 [bufplugin-go](https://github.com/bufbuild/bufplugin-go) and covered by
 `checktest` tests that compile the `.proto` fixtures under
 [internal/rules/testdata](internal/rules/testdata) and compare the produced

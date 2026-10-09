@@ -22,6 +22,7 @@ import (
 const bufYAML = `version: v2
 lint:
   use:
+    - DIRECTORY_SAME_PACKAGE_EXTRA
     - ENUM_DEDICATED_FILE
     - ENUM_DEDICATED_PACKAGE
     - ENUM_FILE_MATCH
@@ -61,6 +62,20 @@ var expectedAnnotations = []annotation{
 		Message:     `Files with package "legacy.acme.billing.v2" must be within a directory "acme/billing/v2" relative to root but were in directory "acme/billing".`,
 	},
 	{
+		Path:        "acme/billing/v1/invoice.proto",
+		StartLine:   3,
+		StartColumn: 1,
+		Type:        "DIRECTORY_SAME_PACKAGE_EXTRA",
+		Message:     `Multiple packages "acme.billing.v1,legacy.acme.billing.v1" detected within directory "acme/billing/v1".`,
+	},
+	{
+		Path:        "acme/billing/v1/payment.proto",
+		StartLine:   3,
+		StartColumn: 1,
+		Type:        "DIRECTORY_SAME_PACKAGE_EXTRA",
+		Message:     `Multiple packages "acme.billing.v1,legacy.acme.billing.v1" detected within directory "acme/billing/v1".`,
+	},
+	{
 		Path:        "acme/user-service/v1/profile.proto",
 		StartLine:   3,
 		StartColumn: 1,
@@ -82,14 +97,7 @@ var expectedAnnotations = []annotation{
 		Message:     `File "acme/v1/kind.proto" declares top-level enums and must have a name ending in "-enums.proto", such as "acme/v1/kind-enums.proto".`,
 	},
 	{
-		Path:        "acme/v1/level-enums.proto",
-		StartLine:   3,
-		StartColumn: 1,
-		Type:        "PACKAGE_DIRECTORY_MATCH_EXTRA",
-		Message:     `Files with package "acme.v1.levels" must be within a directory "acme/v1/levels" relative to root but were in directory "acme/v1".`,
-	},
-	{
-		Path:        "acme/v1/level-enums.proto",
+		Path:        "acme/v1/levels/level-enums.proto",
 		StartLine:   5,
 		StartColumn: 1,
 		Type:        "ENUM_DEDICATED_PACKAGE",

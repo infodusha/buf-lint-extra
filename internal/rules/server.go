@@ -121,21 +121,19 @@ func checkRawRequest(validator protovalidate.Validator, data []byte) (*checkv1.C
 		if !request.enables(rule) {
 			continue
 		}
-		for _, file := range raw.files {
-			annotations, err := rule.check(file, request)
-			if err != nil {
-				return nil, err
-			}
-			for _, annotation := range annotations {
-				response.Annotations = append(response.Annotations, &checkv1.Annotation{
-					RuleId:  rule.spec.ID,
-					Message: annotation.message,
-					FileLocation: &descriptorv1.FileLocation{
-						FileName:   file.name,
-						SourcePath: annotation.sourcePath,
-					},
-				})
-			}
+		annotations, err := rule.check(raw.files, request)
+		if err != nil {
+			return nil, err
+		}
+		for _, annotation := range annotations {
+			response.Annotations = append(response.Annotations, &checkv1.Annotation{
+				RuleId:  rule.spec.ID,
+				Message: annotation.message,
+				FileLocation: &descriptorv1.FileLocation{
+					FileName:   annotation.fileName,
+					SourcePath: annotation.sourcePath,
+				},
+			})
 		}
 	}
 	if err := validator.Validate(response); err != nil {

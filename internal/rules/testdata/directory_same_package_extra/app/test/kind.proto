@@ -1,0 +1,7 @@
+syntax = "proto3";
+
+package app.test.enums;
+
+enum Kind {
+  KIND_UNSPECIFIED = 0;
+}
