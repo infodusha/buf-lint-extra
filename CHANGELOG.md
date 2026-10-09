@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.5.0](https://github.com/infodusha/buf-lint-extra/compare/v0.4.0...v0.5.0) (2026-10-09)
+
+
+### Features
+
+* add ENUM_DEDICATED_PACKAGE rule and enum component option ([c54a1fb](https://github.com/infodusha/buf-lint-extra/commit/c54a1fbf9b053eb7dcc1e9b76e7ba2eaea3d15a1))
+
 ## [0.4.0](https://github.com/infodusha/buf-lint-extra/compare/v0.3.2...v0.4.0) (2026-10-09)
 
 
