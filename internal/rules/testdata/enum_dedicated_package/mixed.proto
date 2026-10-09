@@ -1,0 +1,11 @@
+syntax = "proto3";
+
+package app.test;
+
+enum Status {
+  STATUS_UNSPECIFIED = 0;
+}
+
+message User {
+  Status status = 1;
+}

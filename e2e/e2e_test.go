@@ -23,6 +23,7 @@ const bufYAML = `version: v2
 lint:
   use:
     - ENUM_DEDICATED_FILE
+    - ENUM_DEDICATED_PACKAGE
     - ENUM_FILE_SUFFIX
     - FILE_LOWER_KEBAB_CASE
     - PACKAGE_CAMEL_CASE
@@ -78,6 +79,20 @@ var expectedAnnotations = []annotation{
 		StartColumn: 1,
 		Type:        "ENUM_FILE_SUFFIX",
 		Message:     `File "acme/v1/kind.proto" declares top-level enums and must have a name ending in "-enums.proto", such as "acme/v1/kind-enums.proto".`,
+	},
+	{
+		Path:        "acme/v1/level-enums.proto",
+		StartLine:   3,
+		StartColumn: 1,
+		Type:        "PACKAGE_DIRECTORY_MATCH_EXTRA",
+		Message:     `Files with package "acme.v1.levels" must be within a directory "acme/v1/levels" relative to root but were in directory "acme/v1".`,
+	},
+	{
+		Path:        "acme/v1/level-enums.proto",
+		StartLine:   5,
+		StartColumn: 1,
+		Type:        "ENUM_DEDICATED_PACKAGE",
+		Message:     `Enum "Level" must be declared in a package named after it, such as "acme.v1.level", but the package is "acme.v1.levels".`,
 	},
 	{
 		Path:        "acme/v1/order.proto",

@@ -1,0 +1,7 @@
+syntax = "proto3";
+
+package app.test.order_status;
+
+enum OrderStatus {
+  ORDER_STATUS_UNSPECIFIED = 0;
+}

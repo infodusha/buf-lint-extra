@@ -1,0 +1,7 @@
+syntax = "proto3";
+
+package app.test.isolated;
+
+enum Isolated {
+  ISOLATED_UNSPECIFIED = 0;
+}

@@ -33,14 +33,14 @@ var (
 	enumDescriptorProtoName = field{1, protowire.BytesType}
 )
 
-type checkRequest struct {
+type rawCheckRequest struct {
 	files   []fileSummary
 	options []*optionv1.Option
 	ruleIDs []string
 }
 
-func parseCheckRequest(data []byte) (*checkRequest, error) {
-	request := &checkRequest{}
+func parseCheckRequest(data []byte) (*rawCheckRequest, error) {
+	request := &rawCheckRequest{}
 	err := rangeFields(data, func(f field, value []byte) error {
 		switch f {
 		case checkRequestFileDescriptors:

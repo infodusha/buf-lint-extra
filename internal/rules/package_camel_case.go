@@ -6,7 +6,6 @@ import (
 	"unicode"
 
 	"buf.build/go/bufplugin/check"
-	"buf.build/go/bufplugin/option"
 )
 
 const PackageCamelCaseRuleID = "PACKAGE_CAMEL_CASE"
@@ -21,7 +20,7 @@ var packageCamelCaseRule = newRule(
 	checkPackageCamelCase,
 )
 
-func checkPackageCamelCase(file fileSummary, _ option.Options) ([]annotation, error) {
+func checkPackageCamelCase(file fileSummary, _ checkRequest) ([]annotation, error) {
 	if file.pkg == "" {
 		return nil, nil
 	}

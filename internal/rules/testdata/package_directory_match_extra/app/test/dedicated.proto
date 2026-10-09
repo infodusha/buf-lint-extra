@@ -1,0 +1,7 @@
+syntax = "proto3";
+
+package app.test.dedicated;
+
+enum Dedicated {
+  DEDICATED_UNSPECIFIED = 0;
+}

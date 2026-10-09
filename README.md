@@ -3,13 +3,14 @@
 Extra lint rules for [buf](https://buf.build), packaged as a
 [buf check plugin](https://buf.build/docs/cli/buf-plugins/overview/).
 
-| Rule                            | Default | What it checks                                                                                                                                             |
-| ------------------------------- | ------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `ENUM_DEDICATED_FILE`           | on      | Enums live at the top level of files that declare nothing but enums: no messages, services, or extensions, and no enums nested in messages.                |
-| `ENUM_FILE_SUFFIX`              | off     | Files that declare top-level enums have a name ending in a suffix (`_enum` by default), and files with that suffix declare top-level enums.                |
-| `FILE_LOWER_KEBAB_CASE`         | off     | File names are lower-kebab-case in each dot-separated segment, such as `user-service.proto` or `user-status.enum.proto`.                                   |
-| `PACKAGE_CAMEL_CASE`            | off     | Package names are camelCase: every dot-separated component starts with a lowercase letter and contains no underscores.                                     |
-| `PACKAGE_DIRECTORY_MATCH_EXTRA` | off     | Files are in the directory matching their package, like the builtin rule, after excluding configured package prefixes and converting to a configured case. |
+| Rule                            | Default | What it checks                                                                                                                                                        |
+| ------------------------------- | ------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `ENUM_DEDICATED_FILE`           | on      | Enums live at the top level of files that declare nothing but enums: no messages, services, or extensions, and no enums nested in messages.                           |
+| `ENUM_DEDICATED_PACKAGE`        | off     | Files that declare only enums have a package whose last component is the name of the enum, in any case style, so every enum gets a package of its own.                |
+| `ENUM_FILE_SUFFIX`              | off     | Files that declare top-level enums have a name ending in a suffix (`_enum` by default), and files with that suffix declare top-level enums.                           |
+| `FILE_LOWER_KEBAB_CASE`         | off     | File names are lower-kebab-case in each dot-separated segment, such as `user-service.proto` or `user-status.enum.proto`.                                              |
+| `PACKAGE_CAMEL_CASE`            | off     | Package names are camelCase: every dot-separated component starts with a lowercase letter and contains no underscores.                                                |
+| `PACKAGE_DIRECTORY_MATCH_EXTRA` | off     | Files are in the directory matching their package, like the builtin rule, with options to exclude prefixes, convert the case, and leave out the enum's own component. |
 
 ## Installation
 
@@ -90,6 +91,7 @@ lint:
   use:
     - STANDARD # omit if you do not want to use the rules builtin to buf
     - ENUM_DEDICATED_FILE
+    - ENUM_DEDICATED_PACKAGE
     - ENUM_FILE_SUFFIX
     - FILE_LOWER_KEBAB_CASE
     - PACKAGE_CAMEL_CASE
@@ -105,6 +107,7 @@ plugins:
       package_directory_excluded_prefixes: # optional, empty by default
         - acme.v1
       package_directory_case: lower-kebab-case # optional, components are used as is by default
+      package_directory_enum_component: excluded # optional, excluded when ENUM_DEDICATED_PACKAGE is enabled, included otherwise
 ```
 
 When `lint.use` is set, only the listed rules and categories run, so plugin
@@ -167,6 +170,49 @@ acme/v1/user.proto:10:3:Enum "User.Role" must be declared at the top level of a 
 The annotation is attached to the enum, so a single enum, top-level or nested,
 can be exempted with `// buf:lint:ignore ENUM_DEDICATED_FILE` on the line above
 it.
+
+### ENUM_DEDICATED_PACKAGE
+
+Checks that a file declaring only enums has a package whose last component is
+the name of the enum, so that every enum gets a package of its own, named
+after it. Such a package keeps the generated code of the enum apart from
+everything else, in the same way `ENUM_DEDICATED_FILE` keeps the enum apart
+in the sources. With two enums in one file, at most one can match, so the
+other is reported and has to move to its own package and file.
+
+The comparison looks at the words of the names and ignores their case style:
+enum `OrderStatus` matches both `app.test.orderStatus` and
+`app.test.order_status`, but not `app.test.orderstatus`. The case style of the
+package is left to `PACKAGE_CAMEL_CASE` or the builtin
+`PACKAGE_LOWER_SNAKE_CASE`, so the two rules never ask for different things.
+Files that also declare messages, services, or extensions, and files without
+a package, are not checked.
+
+```proto
+// kind.proto: flagged, the package is not named after the enum
+package app.test.enums;
+
+enum Kind {
+  KIND_UNSPECIFIED = 0;
+}
+```
+
+```
+app/test/kind.proto:5:1:Enum "Kind" must be declared in a package named after it, such as "app.test.kind", but the package is "app.test.enums".
+```
+
+When the camelCase and lower_snake_case forms of the name differ, both are
+suggested. The annotation is attached to the enum, so it can be exempted with
+`// buf:lint:ignore ENUM_DEDICATED_PACKAGE` on the line above it.
+
+Such packages add a directory per enum under the builtin
+`PACKAGE_DIRECTORY_MATCH`. `PACKAGE_DIRECTORY_MATCH_EXTRA` leaves that
+component out of the directory whenever this rule is enabled, so the enum
+files stay next to the files of the parent package; see its
+`package_directory_enum_component` option.
+
+The rule is off by default. Enable it by listing `ENUM_DEDICATED_PACKAGE` in
+`lint.use`.
 
 ### ENUM_FILE_SUFFIX
 
@@ -294,6 +340,23 @@ with package `acme.mainGoal.v1` must be in `acme/main-goal/v1/`, and
 case-insensitive. Components that are already in that case, such as `acme`
 and `v1`, are unchanged.
 
+`package_directory_enum_component` decides what happens to the package
+component named after the enum, the one `ENUM_DEDICATED_PACKAGE` asks for.
+With `excluded`, a file that declares only enums has the last component of its
+package dropped when it is the name of one of those enums in any case style,
+so an enum file `Dedicated` with package `app.test.dedicated` must be in
+`app/test/`, next to the files of `app.test`, and `app/test/dedicated/` is
+reported. Enum files whose last component is not an enum name, and files that
+also declare messages, services, or extensions, keep the full package. With
+`included`, the component is a directory like any other. When the option is
+not set, the component is `excluded` if `ENUM_DEDICATED_PACKAGE` is enabled,
+that is listed in `lint.use` and not in `lint.except`, and `included`
+otherwise, so the two rules agree on the layout unless told otherwise.
+
+The excluded prefix is removed first, then the enum component, and the rest is
+converted. If nothing is left, the file is not checked, like a file without a
+package.
+
 ```yaml
 plugins:
   - plugin: buf-plugin-lint-extra
@@ -301,10 +364,12 @@ plugins:
       package_directory_excluded_prefixes:
         - legacy
       package_directory_case: lower-kebab-case
+      package_directory_enum_component: excluded
 ```
 
 With this configuration, files with package `legacy.acme.billing.v2` must be
-in `acme/billing/v2/`:
+in `acme/billing/v2/`, and an enum file declaring `Priority` with package
+`acme.v1.priority` must be in `acme/v1/`:
 
 ```
 acme/billing/receipt.proto:3:1:Files with package "legacy.acme.billing.v2" must be within a directory "acme/billing/v2" relative to root but were in directory "acme/billing".

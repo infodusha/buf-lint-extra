@@ -17,6 +17,7 @@ func TestPackageDirectoryMatchExtra(t *testing.T) {
 		name                string
 		file                string
 		options             map[string]any
+		ruleIDs             []string
 		expectedAnnotations []checktest.ExpectedAnnotation
 	}{
 		{
@@ -190,16 +191,139 @@ func TestPackageDirectoryMatchExtra(t *testing.T) {
 				PackageDirectoryCaseOptionKey:             "lower-kebab-case",
 			},
 		},
+		{
+			name: "enum component is required in the directory by default",
+			file: "app/test/dedicated.proto",
+			expectedAnnotations: []checktest.ExpectedAnnotation{
+				{
+					RuleID:  PackageDirectoryMatchExtraRuleID,
+					Message: `Files with package "app.test.dedicated" must be within a directory "app/test/dedicated" relative to root but were in directory "app/test".`,
+					FileLocation: &checktest.ExpectedFileLocation{
+						FileName:    "app/test/dedicated.proto",
+						StartLine:   2,
+						StartColumn: 0,
+						EndLine:     2,
+						EndColumn:   27,
+					},
+				},
+			},
+		},
+		{
+			name:    "enum component is excluded from the directory when enabled",
+			file:    "app/test/dedicated.proto",
+			options: map[string]any{PackageDirectoryEnumComponentOptionKey: "excluded"},
+		},
+		{
+			name:    "enum file in the directory of the enum component is flagged when enabled",
+			file:    "app/test/isolated/isolated.proto",
+			options: map[string]any{PackageDirectoryEnumComponentOptionKey: "excluded"},
+			expectedAnnotations: []checktest.ExpectedAnnotation{
+				{
+					RuleID:  PackageDirectoryMatchExtraRuleID,
+					Message: `Files with package "app.test.isolated" must be within a directory "app/test" relative to root but were in directory "app/test/isolated".`,
+					FileLocation: &checktest.ExpectedFileLocation{
+						FileName:    "app/test/isolated/isolated.proto",
+						StartLine:   2,
+						StartColumn: 0,
+						EndLine:     2,
+						EndColumn:   26,
+					},
+				},
+			},
+		},
+		{
+			name:    "file with enums and messages keeps the enum component",
+			file:    "app/test/mixed.proto",
+			options: map[string]any{PackageDirectoryEnumComponentOptionKey: "excluded"},
+			expectedAnnotations: []checktest.ExpectedAnnotation{
+				{
+					RuleID:  PackageDirectoryMatchExtraRuleID,
+					Message: `Files with package "app.test.mixed" must be within a directory "app/test/mixed" relative to root but were in directory "app/test".`,
+					FileLocation: &checktest.ExpectedFileLocation{
+						FileName:    "app/test/mixed.proto",
+						StartLine:   2,
+						StartColumn: 0,
+						EndLine:     2,
+						EndColumn:   23,
+					},
+				},
+			},
+		},
+		{
+			name:    "enum file whose package is only the enum component is not checked",
+			file:    "anywhere/status.proto",
+			options: map[string]any{PackageDirectoryEnumComponentOptionKey: "excluded"},
+		},
+		{
+			name:    "enum component is excluded by default when ENUM_DEDICATED_PACKAGE runs",
+			file:    "app/test/dedicated.proto",
+			ruleIDs: []string{PackageDirectoryMatchExtraRuleID, EnumDedicatedPackageRuleID},
+		},
+		{
+			name:    "included keeps the enum component when ENUM_DEDICATED_PACKAGE runs",
+			file:    "app/test/dedicated.proto",
+			ruleIDs: []string{PackageDirectoryMatchExtraRuleID, EnumDedicatedPackageRuleID},
+			options: map[string]any{PackageDirectoryEnumComponentOptionKey: "included"},
+			expectedAnnotations: []checktest.ExpectedAnnotation{
+				{
+					RuleID:  PackageDirectoryMatchExtraRuleID,
+					Message: `Files with package "app.test.dedicated" must be within a directory "app/test/dedicated" relative to root but were in directory "app/test".`,
+					FileLocation: &checktest.ExpectedFileLocation{
+						FileName:    "app/test/dedicated.proto",
+						StartLine:   2,
+						StartColumn: 0,
+						EndLine:     2,
+						EndColumn:   27,
+					},
+				},
+			},
+		},
+		{
+			name:    "last component that is not the enum name is kept",
+			file:    "app/test/kind.proto",
+			options: map[string]any{PackageDirectoryEnumComponentOptionKey: "excluded"},
+			expectedAnnotations: []checktest.ExpectedAnnotation{
+				{
+					RuleID:  PackageDirectoryMatchExtraRuleID,
+					Message: `Files with package "app.test.enums" must be within a directory "app/test/enums" relative to root but were in directory "app/test".`,
+					FileLocation: &checktest.ExpectedFileLocation{
+						FileName:    "app/test/kind.proto",
+						StartLine:   2,
+						StartColumn: 0,
+						EndLine:     2,
+						EndColumn:   23,
+					},
+				},
+			},
+		},
+		{
+			name:    "enum component matches the enum name in any case style",
+			file:    "app/test/order-status.proto",
+			options: map[string]any{PackageDirectoryEnumComponentOptionKey: "excluded"},
+		},
+		{
+			name: "all options combine",
+			file: "app/main-goal/status.proto",
+			options: map[string]any{
+				PackageDirectoryExcludedPrefixesOptionKey: []string{"legacy"},
+				PackageDirectoryCaseOptionKey:             "lower-kebab-case",
+				PackageDirectoryEnumComponentOptionKey:    "excluded",
+			},
+		},
 	} {
 		t.Run(testCase.name, func(t *testing.T) {
 			t.Parallel()
+			ruleIDs := testCase.ruleIDs
+			if ruleIDs == nil {
+				ruleIDs = []string{PackageDirectoryMatchExtraRuleID}
+			}
 			checktest.CheckTest{
 				Request: &checktest.RequestSpec{
 					Files: &checktest.ProtoFileSpec{
 						DirPaths:  []string{testdataDir},
 						FilePaths: []string{testCase.file},
 					},
-					RuleIDs: []string{PackageDirectoryMatchExtraRuleID},
+					RuleIDs: ruleIDs,
 					Options: testCase.options,
 				},
 				Spec:                Spec,
@@ -226,6 +350,16 @@ func TestPackageDirectoryMatchExtraInvalidOptions(t *testing.T) {
 			name:    "non-string case",
 			options: map[string]any{PackageDirectoryCaseOptionKey: true},
 			key:     PackageDirectoryCaseOptionKey,
+		},
+		{
+			name:    "unknown enum component value",
+			options: map[string]any{PackageDirectoryEnumComponentOptionKey: "dropped"},
+			key:     PackageDirectoryEnumComponentOptionKey,
+		},
+		{
+			name:    "non-string enum component value",
+			options: map[string]any{PackageDirectoryEnumComponentOptionKey: true},
+			key:     PackageDirectoryEnumComponentOptionKey,
 		},
 		{
 			name:    "prefixes as a single string",

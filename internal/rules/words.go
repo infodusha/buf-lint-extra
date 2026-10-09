@@ -48,3 +48,9 @@ func startsWord(runes []rune, i int) bool {
 	}
 	return unicode.IsLower(runes[i-1]) || (i+1 < len(runes) && unicode.IsLower(runes[i+1]))
 }
+
+// sameWords reports whether a and b are the same words in any case style, so
+// "OrderStatus" matches "orderStatus" and "order_status" but not "orderstatus".
+func sameWords(a, b string) bool {
+	return toLowerSnakeCase(a) == toLowerSnakeCase(b)
+}

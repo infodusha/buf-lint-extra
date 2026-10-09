@@ -117,7 +117,7 @@ func checkRawRequest(validator protovalidate.Validator, data []byte) (*checkv1.C
 	response := &checkv1.CheckResponse{}
 	for _, rule := range rules {
 		for _, file := range request.files {
-			annotations, err := rule.check(file, options)
+			annotations, err := rule.check(file, checkRequest{options: options, ruleIDs: request.ruleIDs})
 			if err != nil {
 				return nil, err
 			}

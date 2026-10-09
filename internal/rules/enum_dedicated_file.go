@@ -5,7 +5,6 @@ import (
 	"strings"
 
 	"buf.build/go/bufplugin/check"
-	"buf.build/go/bufplugin/option"
 )
 
 const EnumDedicatedFileRuleID = "ENUM_DEDICATED_FILE"
@@ -20,7 +19,7 @@ var enumDedicatedFileRule = newRule(
 	checkEnumDedicatedFile,
 )
 
-func checkEnumDedicatedFile(file fileSummary, _ option.Options) ([]annotation, error) {
+func checkEnumDedicatedFile(file fileSummary, _ checkRequest) ([]annotation, error) {
 	var annotations []annotation
 	if others := nonEnumDeclarations(file); others != "" {
 		for i, enum := range file.enums {

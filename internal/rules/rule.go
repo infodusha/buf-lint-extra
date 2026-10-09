@@ -3,6 +3,7 @@ package rules
 import (
 	"context"
 	"slices"
+	"strings"
 
 	"buf.build/go/bufplugin/check"
 	"buf.build/go/bufplugin/check/checkutil"
@@ -16,7 +17,21 @@ type rule struct {
 	check checkFunc
 }
 
-type checkFunc func(file fileSummary, options option.Options) ([]annotation, error)
+type checkFunc func(file fileSummary, request checkRequest) ([]annotation, error)
+
+type checkRequest struct {
+	options option.Options
+	ruleIDs []string
+}
+
+// enables reports whether the rule runs in this request: it is requested by
+// ID, or the request has no rule IDs and the rule is on by default.
+func (request checkRequest) enables(spec *check.RuleSpec) bool {
+	if len(request.ruleIDs) == 0 {
+		return spec.Default
+	}
+	return slices.Contains(request.ruleIDs, spec.ID)
+}
 
 type fileSummary struct {
 	name        string
@@ -26,6 +41,14 @@ type fileSummary struct {
 	messages    int
 	services    int
 	extensions  int
+}
+
+func (file fileSummary) declaresOnlyEnums() bool {
+	return len(file.enums) > 0 && file.messages == 0 && file.services == 0 && file.extensions == 0
+}
+
+func (file fileSummary) declaresEnumNamed(name string) bool {
+	return slices.ContainsFunc(file.enums, func(enum string) bool { return sameWords(enum, name) })
 }
 
 type nestedEnum struct {
@@ -48,7 +71,7 @@ func newRule(spec *check.RuleSpec, checkFile checkFunc) rule {
 			fileDescriptor descriptor.FileDescriptor,
 		) error {
 			file := fileSummaryForDescriptor(fileDescriptor.ProtoreflectFileDescriptor())
-			annotations, err := checkFile(file, request.Options())
+			annotations, err := checkFile(file, checkRequest{options: request.Options(), ruleIDs: request.RuleIDs()})
 			if err != nil {
 				return err
 			}
@@ -115,6 +138,13 @@ func appendNestedEnums(
 		)
 	}
 	return nestedEnums
+}
+
+func splitLastComponent(pkg string) (parent, last string) {
+	if i := strings.LastIndex(pkg, "."); i >= 0 {
+		return pkg[:i], pkg[i+1:]
+	}
+	return "", pkg
 }
 
 func qualifiedName(scope, name string) string {

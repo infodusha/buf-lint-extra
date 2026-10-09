@@ -6,7 +6,6 @@ import (
 	"strings"
 
 	"buf.build/go/bufplugin/check"
-	"buf.build/go/bufplugin/option"
 )
 
 const FileLowerKebabCaseRuleID = "FILE_LOWER_KEBAB_CASE"
@@ -21,7 +20,7 @@ var fileLowerKebabCaseRule = newRule(
 	checkFileLowerKebabCase,
 )
 
-func checkFileLowerKebabCase(file fileSummary, _ option.Options) ([]annotation, error) {
+func checkFileLowerKebabCase(file fileSummary, _ checkRequest) ([]annotation, error) {
 	base := path.Base(file.name)
 	stem := strings.TrimSuffix(base, protoFileExtension)
 	var segments []string

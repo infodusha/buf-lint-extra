@@ -1,0 +1,11 @@
+syntax = "proto3";
+
+package app.test.mixed;
+
+enum Mixed {
+  MIXED_UNSPECIFIED = 0;
+}
+
+message Holder {
+  Mixed mixed = 1;
+}

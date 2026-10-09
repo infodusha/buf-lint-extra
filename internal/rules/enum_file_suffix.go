@@ -30,8 +30,8 @@ var enumFileSuffixRule = newRule(
 	checkEnumFileSuffix,
 )
 
-func checkEnumFileSuffix(file fileSummary, options option.Options) ([]annotation, error) {
-	suffix, err := enumFileSuffix(options)
+func checkEnumFileSuffix(file fileSummary, request checkRequest) ([]annotation, error) {
+	suffix, err := enumFileSuffix(request.options)
 	if err != nil {
 		return nil, err
 	}
