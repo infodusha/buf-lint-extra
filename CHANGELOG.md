@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.8.0](https://github.com/infodusha/buf-lint-extra/compare/v0.7.0...v0.8.0) (2026-10-09)
+
+
+### ⚠ BREAKING CHANGES
+
+* no rule is on by default any more; list ENUM_DEDICATED_FILE in lint.use to keep it.
+
+### Features
+
+* add DIRECTORY_SAME_PACKAGE_EXTRA ([0a53d8a](https://github.com/infodusha/buf-lint-extra/commit/0a53d8a1fd7cf80b317929e2972207eb7db7855f))
+* add the EXTRA category and turn ENUM_DEDICATED_FILE off by default ([149449c](https://github.com/infodusha/buf-lint-extra/commit/149449c3edf01e7474cb73bc269c9c1d69d6d7da))
+
 ## [0.7.0](https://github.com/infodusha/buf-lint-extra/compare/v0.6.1...v0.7.0) (2026-10-09)
 
 
