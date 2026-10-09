@@ -9,6 +9,7 @@ import (
 var allRules = []rule{
 	enumDedicatedFileRule,
 	enumDedicatedPackageRule,
+	enumFileMatchRule,
 	enumFileSuffixRule,
 	fileLowerKebabCaseRule,
 	packageCamelCaseRule,
@@ -18,7 +19,7 @@ var allRules = []rule{
 var Spec = &check.Spec{
 	Rules: ruleSpecs(allRules),
 	Info: &info.Spec{
-		Documentation: "Extra lint rules for buf: keeps enums in dedicated files and packages, checks naming conventions for enum files, file names, and packages, and matches packages to directories with configurable prefixes and case.",
+		Documentation: "Extra lint rules for buf: keeps enums in dedicated files and packages named after them, checks naming conventions for enum files, file names, and packages, and matches packages to directories with configurable prefixes and case.",
 		SPDXLicenseID: "Apache-2.0",
 		LicenseURL:    "https://github.com/infodusha/buf-lint-extra/blob/main/LICENSE",
 	},

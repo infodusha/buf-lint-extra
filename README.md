@@ -7,6 +7,7 @@ Extra lint rules for [buf](https://buf.build), packaged as a
 | ------------------------------- | ------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `ENUM_DEDICATED_FILE`           | on      | Enums live at the top level of files that declare nothing but enums: no messages, services, or extensions, and no enums nested in messages.                           |
 | `ENUM_DEDICATED_PACKAGE`        | off     | Files that declare only enums have a package whose last component is the name of the enum, in any case style, so every enum gets a package of its own.                |
+| `ENUM_FILE_MATCH`               | off     | Files that declare only enums are named after the enum, in any case style, with or without the enum file suffix.                                                      |
 | `ENUM_FILE_SUFFIX`              | off     | Files that declare top-level enums have a name ending in a suffix (`_enum` by default), and files with that suffix declare top-level enums.                           |
 | `FILE_LOWER_KEBAB_CASE`         | off     | File names are lower-kebab-case in each dot-separated segment, such as `user-service.proto` or `user-status.enum.proto`.                                              |
 | `PACKAGE_CAMEL_CASE`            | off     | Package names are camelCase: every dot-separated component starts with a lowercase letter and contains no underscores.                                                |
@@ -92,6 +93,7 @@ lint:
     - STANDARD # omit if you do not want to use the rules builtin to buf
     - ENUM_DEDICATED_FILE
     - ENUM_DEDICATED_PACKAGE
+    - ENUM_FILE_MATCH
     - ENUM_FILE_SUFFIX
     - FILE_LOWER_KEBAB_CASE
     - PACKAGE_CAMEL_CASE
@@ -212,6 +214,37 @@ files stay next to the files of the parent package; see its
 `package_directory_enum_component` option.
 
 The rule is off by default. Enable it by listing `ENUM_DEDICATED_PACKAGE` in
+`lint.use`.
+
+### ENUM_FILE_MATCH
+
+Checks that a file declaring only enums is named after the enum, so that the
+enum can be found by its file name. This matters most with
+`ENUM_DEDICATED_PACKAGE` and `PACKAGE_DIRECTORY_MATCH_EXTRA`, where the
+directory no longer carries the name of the enum: with all three, the file
+`app/test/dedicated.proto`, the package `app.test.dedicated` and the enum
+`Dedicated` all agree. With two enums in one file, at most one can match, so
+the other is reported.
+
+The name is compared without the `.proto` extension and, when present,
+without the `enum_file_suffix` of `ENUM_FILE_SUFFIX`, `_enum` by default. As
+with `ENUM_DEDICATED_PACKAGE`, the comparison looks at the words and ignores
+their case style: enum `OrderStatus` matches `order-status.proto`,
+`order_status.proto` and `order-status_enum.proto`, but not
+`orderstatus.proto`. The case style of the file name is left to
+`FILE_LOWER_KEBAB_CASE` or the builtin `FILE_LOWER_SNAKE_CASE`. Files that
+also declare messages, services, or extensions are not checked.
+
+```
+acme/v1/misc-enums.proto:5:1:Enum "Severity" must be declared in a file named after it, such as "acme/v1/severity-enums.proto", but the file is "acme/v1/misc-enums.proto".
+```
+
+The suggestion keeps the suffix when the file has one, and lists both the
+lower-kebab-case and the lower_snake_case form when they differ. The
+annotation is attached to the enum, so it can be exempted with
+`// buf:lint:ignore ENUM_FILE_MATCH` on the line above it.
+
+The rule is off by default. Enable it by listing `ENUM_FILE_MATCH` in
 `lint.use`.
 
 ### ENUM_FILE_SUFFIX

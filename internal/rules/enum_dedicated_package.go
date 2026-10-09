@@ -2,9 +2,6 @@ package rules
 
 import (
 	"fmt"
-	"slices"
-	"strconv"
-	"strings"
 
 	"buf.build/go/bufplugin/check"
 )
@@ -45,14 +42,10 @@ func checkEnumDedicatedPackage(file fileSummary, _ checkRequest) ([]annotation, 
 }
 
 // packagesNamedAfter lists the packages under parent whose last component is
-// enum in camelCase and in lower_snake_case, quoted and joined with "or", or
-// a single package when both are the same.
+// enum in camelCase and in lower_snake_case.
 func packagesNamedAfter(parent, enum string) string {
-	var packages []string
-	for _, name := range []string{toCamelCase(enum), toLowerSnakeCase(enum)} {
-		if pkg := strconv.Quote(qualifiedName(parent, name)); !slices.Contains(packages, pkg) {
-			packages = append(packages, pkg)
-		}
-	}
-	return strings.Join(packages, " or ")
+	return quotedAlternatives([]string{
+		qualifiedName(parent, toCamelCase(enum)),
+		qualifiedName(parent, toLowerSnakeCase(enum)),
+	})
 }

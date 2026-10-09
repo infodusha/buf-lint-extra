@@ -3,6 +3,7 @@ package rules
 import (
 	"context"
 	"slices"
+	"strconv"
 	"strings"
 
 	"buf.build/go/bufplugin/check"
@@ -145,6 +146,17 @@ func splitLastComponent(pkg string) (parent, last string) {
 		return pkg[:i], pkg[i+1:]
 	}
 	return "", pkg
+}
+
+// quotedAlternatives quotes the distinct values and joins them with "or".
+func quotedAlternatives(values []string) string {
+	var quoted []string
+	for _, value := range values {
+		if q := strconv.Quote(value); !slices.Contains(quoted, q) {
+			quoted = append(quoted, q)
+		}
+	}
+	return strings.Join(quoted, " or ")
 }
 
 func qualifiedName(scope, name string) string {

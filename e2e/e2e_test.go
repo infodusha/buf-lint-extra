@@ -24,6 +24,7 @@ lint:
   use:
     - ENUM_DEDICATED_FILE
     - ENUM_DEDICATED_PACKAGE
+    - ENUM_FILE_MATCH
     - ENUM_FILE_SUFFIX
     - FILE_LOWER_KEBAB_CASE
     - PACKAGE_CAMEL_CASE
@@ -93,6 +94,13 @@ var expectedAnnotations = []annotation{
 		StartColumn: 1,
 		Type:        "ENUM_DEDICATED_PACKAGE",
 		Message:     `Enum "Level" must be declared in a package named after it, such as "acme.v1.level", but the package is "acme.v1.levels".`,
+	},
+	{
+		Path:        "acme/v1/misc-enums.proto",
+		StartLine:   5,
+		StartColumn: 1,
+		Type:        "ENUM_FILE_MATCH",
+		Message:     `Enum "Severity" must be declared in a file named after it, such as "acme/v1/severity-enums.proto", but the file is "acme/v1/misc-enums.proto".`,
 	},
 	{
 		Path:        "acme/v1/order.proto",

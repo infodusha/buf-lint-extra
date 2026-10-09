@@ -1,0 +1,7 @@
+syntax = "proto3";
+
+package test.v1;
+
+enum StatusEnum {
+  STATUS_ENUM_UNSPECIFIED = 0;
+}
