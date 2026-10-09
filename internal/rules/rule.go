@@ -10,7 +10,7 @@ import (
 	"buf.build/go/bufplugin/check/checkutil"
 	"buf.build/go/bufplugin/descriptor"
 	"buf.build/go/bufplugin/option"
-	"google.golang.org/protobuf/reflect/protoreflect"
+	"google.golang.org/protobuf/proto"
 )
 
 type rule struct {
@@ -27,11 +27,11 @@ type checkRequest struct {
 
 // enables reports whether the rule runs in this request: it is requested by
 // ID, or the request has no rule IDs and the rule is on by default.
-func (request checkRequest) enables(spec *check.RuleSpec) bool {
+func (request checkRequest) enables(r rule) bool {
 	if len(request.ruleIDs) == 0 {
-		return spec.Default
+		return r.spec.Default
 	}
-	return slices.Contains(request.ruleIDs, spec.ID)
+	return slices.Contains(request.ruleIDs, r.spec.ID)
 }
 
 type fileSummary struct {
@@ -71,7 +71,14 @@ func newRule(spec *check.RuleSpec, checkFile checkFunc) rule {
 			request check.Request,
 			fileDescriptor descriptor.FileDescriptor,
 		) error {
-			file := fileSummaryForDescriptor(fileDescriptor.ProtoreflectFileDescriptor())
+			data, err := proto.Marshal(fileDescriptor.FileDescriptorProto())
+			if err != nil {
+				return err
+			}
+			file, err := parseFileDescriptorProto(data)
+			if err != nil {
+				return err
+			}
 			annotations, err := checkFile(file, checkRequest{options: request.Options(), ruleIDs: request.RuleIDs()})
 			if err != nil {
 				return err
@@ -87,58 +94,6 @@ func newRule(spec *check.RuleSpec, checkFile checkFunc) rule {
 		checkutil.WithoutImports(),
 	)
 	return rule{spec: spec, check: checkFile}
-}
-
-func fileSummaryForDescriptor(fileDescriptor protoreflect.FileDescriptor) fileSummary {
-	enums := fileDescriptor.Enums()
-	file := fileSummary{
-		name:       fileDescriptor.Path(),
-		pkg:        string(fileDescriptor.Package()),
-		enums:      make([]string, enums.Len()),
-		messages:   fileDescriptor.Messages().Len(),
-		services:   fileDescriptor.Services().Len(),
-		extensions: fileDescriptor.Extensions().Len(),
-	}
-	for i := range enums.Len() {
-		file.enums[i] = string(enums.Get(i).Name())
-	}
-	messages := fileDescriptor.Messages()
-	for i := range messages.Len() {
-		file.nestedEnums = appendNestedEnums(
-			file.nestedEnums,
-			messages.Get(i),
-			"",
-			[]int32{int32(fileDescriptorProtoMessageType.number), int32(i)},
-		)
-	}
-	return file
-}
-
-func appendNestedEnums(
-	nestedEnums []nestedEnum,
-	message protoreflect.MessageDescriptor,
-	scope string,
-	sourcePath []int32,
-) []nestedEnum {
-	name := qualifiedName(scope, string(message.Name()))
-	enums := message.Enums()
-	for i := range enums.Len() {
-		nestedEnums = append(nestedEnums, nestedEnum{
-			name:       qualifiedName(name, string(enums.Get(i).Name())),
-			message:    name,
-			sourcePath: childSourcePath(sourcePath, descriptorProtoEnumType, i),
-		})
-	}
-	messages := message.Messages()
-	for i := range messages.Len() {
-		nestedEnums = appendNestedEnums(
-			nestedEnums,
-			messages.Get(i),
-			name,
-			childSourcePath(sourcePath, descriptorProtoNestedType, i),
-		)
-	}
-	return nestedEnums
 }
 
 func splitLastComponent(pkg string) (parent, last string) {

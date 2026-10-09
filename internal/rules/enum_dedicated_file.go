@@ -50,12 +50,6 @@ func checkEnumDedicatedFile(file fileSummary, _ checkRequest) ([]annotation, err
 	return annotations, nil
 }
 
-// nonEnumDeclarations returns a summary such as "2 messages and 1 service",
-// or "" if the file declares nothing but enums.
-func nonEnumDeclarations(file fileSummary) string {
-	return joinWithAnd(nonEnumDeclarationParts(file))
-}
-
 func nonEnumDeclarationParts(file fileSummary) []string {
 	var parts []string
 	for _, kind := range []struct {

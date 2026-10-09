@@ -101,7 +101,7 @@ func packageDirectoryExcludeEnumComponent(request checkRequest) (bool, error) {
 	}
 	switch value {
 	case "":
-		return request.enables(enumDedicatedPackageRule.spec), nil
+		return request.enables(enumDedicatedPackageRule), nil
 	case "included":
 		return false, nil
 	case "excluded":

@@ -34,3 +34,5 @@ go.work.sum
 # Plugin binaries
 /buf-plugin-lint-extra
 *.wasm
+/dist/
+/bin/

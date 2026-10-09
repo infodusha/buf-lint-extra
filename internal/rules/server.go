@@ -102,22 +102,27 @@ func handleFunc[Request, Response proto.Message](
 }
 
 func checkRawRequest(validator protovalidate.Validator, data []byte) (*checkv1.CheckResponse, error) {
-	request, err := parseCheckRequest(data)
+	raw, err := parseCheckRequest(data)
 	if err != nil {
 		return nil, pluginrpc.NewError(pluginrpc.CodeInvalidArgument, err)
 	}
-	options, err := option.OptionsForProtoOptions(request.options)
+	for _, ruleID := range raw.ruleIDs {
+		if !slices.ContainsFunc(allRules, func(r rule) bool { return r.spec.ID == ruleID }) {
+			return nil, pluginrpc.NewErrorf(pluginrpc.CodeInvalidArgument, "unknown rule ID: %q", ruleID)
+		}
+	}
+	options, err := option.OptionsForProtoOptions(raw.options)
 	if err != nil {
 		return nil, err
 	}
-	rules, err := rulesForIDs(request.ruleIDs)
-	if err != nil {
-		return nil, err
-	}
+	request := checkRequest{options: options, ruleIDs: raw.ruleIDs}
 	response := &checkv1.CheckResponse{}
-	for _, rule := range rules {
-		for _, file := range request.files {
-			annotations, err := rule.check(file, checkRequest{options: options, ruleIDs: request.ruleIDs})
+	for _, rule := range allRules {
+		if !request.enables(rule) {
+			continue
+		}
+		for _, file := range raw.files {
+			annotations, err := rule.check(file, request)
 			if err != nil {
 				return nil, err
 			}
@@ -137,21 +142,6 @@ func checkRawRequest(validator protovalidate.Validator, data []byte) (*checkv1.C
 		return nil, err
 	}
 	return response, nil
-}
-
-func rulesForIDs(ruleIDs []string) ([]rule, error) {
-	if len(ruleIDs) == 0 {
-		return slices.DeleteFunc(slices.Clone(allRules), func(r rule) bool { return !r.spec.Default }), nil
-	}
-	rules := make([]rule, len(ruleIDs))
-	for i, ruleID := range ruleIDs {
-		index := slices.IndexFunc(allRules, func(r rule) bool { return r.spec.ID == ruleID })
-		if index < 0 {
-			return nil, pluginrpc.NewErrorf(pluginrpc.CodeInvalidArgument, "unknown rule ID: %q", ruleID)
-		}
-		rules[i] = allRules[index]
-	}
-	return rules, nil
 }
 
 func newRawCheckRequestDescriptor() protoreflect.MessageDescriptor {

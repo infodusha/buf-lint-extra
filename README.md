@@ -425,12 +425,24 @@ go build ./cmd/buf-plugin-lint-extra
 GOOS=wasip1 GOARCH=wasm go build -o buf-plugin-lint-extra.wasm ./cmd/buf-plugin-lint-extra
 ```
 
-Rules live in [internal/rules](internal/rules). Each rule is a
-`check.RuleSpec` with a handler built on
-[bufplugin-go](https://github.com/bufbuild/bufplugin-go), and is covered by
+Rules live in [internal/rules](internal/rules). Each rule is a function from
+a `fileSummary`, the few facts about a file that the rules look at, to
+annotations. It is registered as a `check.RuleSpec` of
+[bufplugin-go](https://github.com/bufbuild/bufplugin-go) and covered by
 `checktest` tests that compile the `.proto` fixtures under
 [internal/rules/testdata](internal/rules/testdata) and compare the produced
 annotations with the expected ones.
+
+The plugin does not serve `check` through bufplugin-go, though.
+[server.go](internal/rules/server.go) runs its own pluginrpc server, and
+[request.go](internal/rules/request.go) builds the summaries with a
+`protowire` scan of the request instead of unmarshaling and validating the
+descriptors: `buf` starts the plugin several times per lint run, and under
+Wasm that work took seconds on larger modules. `ListRules`, `ListCategories`
+and `GetPluginInfo` still use the bufplugin-go handlers. The `check.RuleSpec`
+handlers feed the same parser from bufplugin-go's descriptors, and
+`TestServerMatchesSpec` runs every fixture through both servers, so the two
+cannot drift.
 
 The end-to-end tests in [e2e](e2e) build the plugin both as a native binary and
 as a Wasm module, run `buf lint` with it on the module under

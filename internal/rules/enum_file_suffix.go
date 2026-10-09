@@ -38,7 +38,7 @@ func checkEnumFileSuffix(file fileSummary, request checkRequest) ([]annotation, 
 	stem := strings.TrimSuffix(path.Base(file.name), protoFileExtension)
 	hasSuffix := strings.HasSuffix(stem, suffix)
 	hasEnums := len(file.enums) > 0
-	others := nonEnumDeclarations(file)
+	others := joinWithAnd(nonEnumDeclarationParts(file))
 	var message string
 	switch {
 	case hasEnums && !hasSuffix && others != "":
