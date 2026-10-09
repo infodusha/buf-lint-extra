@@ -30,17 +30,22 @@ func checkEnumFileMatch(file fileSummary, request checkRequest) ([]annotation, e
 	}
 	stem := strings.TrimSuffix(path.Base(file.name), protoFileExtension)
 	name, hasSuffix := strings.CutSuffix(stem, suffix)
+	suggestedSuffix := ""
+	if hasSuffix || request.enables(enumFileSuffixRule) {
+		suggestedSuffix = suffix
+	}
+	cases := []func(string) string{toLowerKebabCase, toLowerSnakeCase}
+	if request.enables(fileLowerKebabCaseRule) {
+		cases = cases[:1]
+	}
 	var annotations []annotation
 	for i, enum := range file.enums {
 		if sameWords(enum, stem) || (hasSuffix && sameWords(enum, name)) {
 			continue
 		}
 		var files []string
-		for _, converted := range []string{toLowerKebabCase(enum), toLowerSnakeCase(enum)} {
-			if hasSuffix {
-				converted += suffix
-			}
-			files = append(files, path.Join(path.Dir(file.name), converted+protoFileExtension))
+		for _, convert := range cases {
+			files = append(files, path.Join(path.Dir(file.name), convert(enum)+suggestedSuffix+protoFileExtension))
 		}
 		annotations = append(annotations, annotation{
 			message: fmt.Sprintf(

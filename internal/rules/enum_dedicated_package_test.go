@@ -25,6 +25,7 @@ func TestEnumDedicatedPackage(t *testing.T) {
 	for _, testCase := range []struct {
 		name                string
 		file                string
+		ruleIDs             []string
 		expectedAnnotations []checktest.ExpectedAnnotation
 	}{
 		{
@@ -84,6 +85,18 @@ func TestEnumDedicatedPackage(t *testing.T) {
 			},
 		},
 		{
+			name:    "only the camelCase form is suggested when PACKAGE_CAMEL_CASE is enabled",
+			file:    "collapsed.proto",
+			ruleIDs: []string{EnumDedicatedPackageRuleID, PackageCamelCaseRuleID},
+			expectedAnnotations: []checktest.ExpectedAnnotation{
+				{
+					RuleID:       EnumDedicatedPackageRuleID,
+					Message:      `Enum "OrderStatus" must be declared in a package named after it, such as "app.test.orderStatus", but the package is "app.test.orderstatus".`,
+					FileLocation: enumLocation("collapsed.proto", 0),
+				},
+			},
+		},
+		{
 			name: "file with enums and messages is not checked",
 			file: "mixed.proto",
 		},
@@ -94,13 +107,17 @@ func TestEnumDedicatedPackage(t *testing.T) {
 	} {
 		t.Run(testCase.name, func(t *testing.T) {
 			t.Parallel()
+			ruleIDs := testCase.ruleIDs
+			if ruleIDs == nil {
+				ruleIDs = []string{EnumDedicatedPackageRuleID}
+			}
 			checktest.CheckTest{
 				Request: &checktest.RequestSpec{
 					Files: &checktest.ProtoFileSpec{
 						DirPaths:  []string{testdataDir},
 						FilePaths: []string{testCase.file},
 					},
-					RuleIDs: []string{EnumDedicatedPackageRuleID},
+					RuleIDs: ruleIDs,
 				},
 				Spec:                Spec,
 				ExpectedAnnotations: testCase.expectedAnnotations,

@@ -26,6 +26,7 @@ func TestEnumFileMatch(t *testing.T) {
 	for _, testCase := range []struct {
 		name                string
 		file                string
+		ruleIDs             []string
 		options             map[string]any
 		expectedAnnotations []checktest.ExpectedAnnotation
 	}{
@@ -121,19 +122,70 @@ func TestEnumFileMatch(t *testing.T) {
 			},
 		},
 		{
+			name:    "suffix is suggested when ENUM_FILE_SUFFIX is enabled",
+			file:    "enums.proto",
+			ruleIDs: []string{EnumFileMatchRuleID, EnumFileSuffixRuleID},
+			expectedAnnotations: []checktest.ExpectedAnnotation{
+				{
+					RuleID:       EnumFileMatchRuleID,
+					Message:      `Enum "Kind" must be declared in a file named after it, such as "kind_enum.proto", but the file is "enums.proto".`,
+					FileLocation: enumLocation("enums.proto", 0),
+				},
+				{
+					RuleID:       EnumFileSuffixRuleID,
+					Message:      `File "enums.proto" declares top-level enums and must have a name ending in "_enum.proto", such as "enums_enum.proto".`,
+					FileLocation: &checktest.ExpectedFileLocation{FileName: "enums.proto"},
+				},
+			},
+		},
+		{
+			name:    "only the lower-kebab-case form is suggested when FILE_LOWER_KEBAB_CASE is enabled",
+			file:    "orderstatus.proto",
+			ruleIDs: []string{EnumFileMatchRuleID, FileLowerKebabCaseRuleID},
+			expectedAnnotations: []checktest.ExpectedAnnotation{
+				{
+					RuleID:       EnumFileMatchRuleID,
+					Message:      `Enum "OrderStatus" must be declared in a file named after it, such as "order-status.proto", but the file is "orderstatus.proto".`,
+					FileLocation: enumLocation("orderstatus.proto", 0),
+				},
+			},
+		},
+		{
+			name:    "suffix and case of the enabled rules combine",
+			file:    "orderstatus.proto",
+			ruleIDs: []string{EnumFileMatchRuleID, EnumFileSuffixRuleID, FileLowerKebabCaseRuleID},
+			options: map[string]any{EnumFileSuffixOptionKey: "-enum"},
+			expectedAnnotations: []checktest.ExpectedAnnotation{
+				{
+					RuleID:       EnumFileMatchRuleID,
+					Message:      `Enum "OrderStatus" must be declared in a file named after it, such as "order-status-enum.proto", but the file is "orderstatus.proto".`,
+					FileLocation: enumLocation("orderstatus.proto", 0),
+				},
+				{
+					RuleID:       EnumFileSuffixRuleID,
+					Message:      `File "orderstatus.proto" declares top-level enums and must have a name ending in "-enum.proto", such as "orderstatus-enum.proto".`,
+					FileLocation: &checktest.ExpectedFileLocation{FileName: "orderstatus.proto"},
+				},
+			},
+		},
+		{
 			name: "file with enums and messages is not checked",
 			file: "mixed.proto",
 		},
 	} {
 		t.Run(testCase.name, func(t *testing.T) {
 			t.Parallel()
+			ruleIDs := testCase.ruleIDs
+			if ruleIDs == nil {
+				ruleIDs = []string{EnumFileMatchRuleID}
+			}
 			checktest.CheckTest{
 				Request: &checktest.RequestSpec{
 					Files: &checktest.ProtoFileSpec{
 						DirPaths:  []string{testdataDir},
 						FilePaths: []string{testCase.file},
 					},
-					RuleIDs: []string{EnumFileMatchRuleID},
+					RuleIDs: ruleIDs,
 					Options: testCase.options,
 				},
 				Spec:                Spec,

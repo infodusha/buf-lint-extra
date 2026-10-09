@@ -201,8 +201,10 @@ app/test/kind.proto:5:1:Enum "Kind" must be declared in a package named after it
 ```
 
 When the camelCase and lower_snake_case forms of the name differ, both are
-suggested. The annotation is attached to the enum, so it can be exempted with
-`// buf:lint:ignore ENUM_DEDICATED_PACKAGE` on the line above it.
+suggested, unless `PACKAGE_CAMEL_CASE` is enabled, in which case only the
+camelCase form is. The annotation is attached to the enum, so it can be
+exempted with `// buf:lint:ignore ENUM_DEDICATED_PACKAGE` on the line above
+it.
 
 Such packages add a directory per enum under the builtin
 `PACKAGE_DIRECTORY_MATCH`. `PACKAGE_DIRECTORY_MATCH_EXTRA` leaves that
@@ -236,10 +238,12 @@ also declare messages, services, or extensions are not checked.
 acme/v1/misc-enums.proto:5:1:Enum "Severity" must be declared in a file named after it, such as "acme/v1/severity-enums.proto", but the file is "acme/v1/misc-enums.proto".
 ```
 
-The suggestion keeps the suffix when the file has one, and lists both the
-lower-kebab-case and the lower_snake_case form when they differ. The
-annotation is attached to the enum, so it can be exempted with
-`// buf:lint:ignore ENUM_FILE_MATCH` on the line above it.
+The suggestion has the suffix when the file has one or `ENUM_FILE_SUFFIX` is
+enabled, and lists both the lower-kebab-case and the lower_snake_case form
+when they differ, unless `FILE_LOWER_KEBAB_CASE` is enabled, in which case
+only the lower-kebab-case form is. The annotation is attached to the enum, so
+it can be exempted with `// buf:lint:ignore ENUM_FILE_MATCH` on the line
+above it.
 
 The rule is off by default. Enable it by listing `ENUM_FILE_MATCH` in
 `lint.use`.
