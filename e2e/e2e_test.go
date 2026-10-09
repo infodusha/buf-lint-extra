@@ -24,6 +24,7 @@ lint:
   use:
     - ENUM_DEDICATED_FILE
     - ENUM_FILE_SUFFIX
+    - FILE_LOWER_KEBAB_CASE
     - PACKAGE_CAMEL_CASE
   ignore_only:
     ENUM_FILE_SUFFIX:
@@ -31,7 +32,7 @@ lint:
 plugins:
   - plugin: %s
     options:
-      enum_file_suffix: _enums
+      enum_file_suffix: -enums
 `
 
 // bufLintFailureExitCode is the exit code of buf lint when it reports annotations.
@@ -54,18 +55,18 @@ var expectedAnnotations = []annotation{
 		Message:     `Package name "acme.user_service.v1" should be camelCase, such as "acme.userService.v1".`,
 	},
 	{
-		Path:        "acme/v1/color_enums.proto",
+		Path:        "acme/v1/color-enums.proto",
 		StartLine:   1,
 		StartColumn: 1,
 		Type:        "ENUM_FILE_SUFFIX",
-		Message:     `File "acme/v1/color_enums.proto" has a name ending in "_enums.proto" but declares no top-level enums.`,
+		Message:     `File "acme/v1/color-enums.proto" has a name ending in "-enums.proto" but declares no top-level enums.`,
 	},
 	{
 		Path:        "acme/v1/kind.proto",
 		StartLine:   1,
 		StartColumn: 1,
 		Type:        "ENUM_FILE_SUFFIX",
-		Message:     `File "acme/v1/kind.proto" declares top-level enums and must have a name ending in "_enums.proto", such as "acme/v1/kind_enums.proto".`,
+		Message:     `File "acme/v1/kind.proto" declares top-level enums and must have a name ending in "-enums.proto", such as "acme/v1/kind-enums.proto".`,
 	},
 	{
 		Path:        "acme/v1/order.proto",
@@ -75,11 +76,18 @@ var expectedAnnotations = []annotation{
 		Message:     `Enum "Order.State" must be declared at the top level of a dedicated file that contains only enums, not nested in message "Order".`,
 	},
 	{
+		Path:        "acme/v1/order_item.proto",
+		StartLine:   1,
+		StartColumn: 1,
+		Type:        "FILE_LOWER_KEBAB_CASE",
+		Message:     `Filename "order_item.proto" should be lower-kebab-case.proto, such as "order-item.proto".`,
+	},
+	{
 		Path:        "acme/v1/user.proto",
 		StartLine:   1,
 		StartColumn: 1,
 		Type:        "ENUM_FILE_SUFFIX",
-		Message:     `File "acme/v1/user.proto" declares top-level enums alongside 1 message, so the enums must move to a file with a name ending in "_enums.proto".`,
+		Message:     `File "acme/v1/user.proto" declares top-level enums alongside 1 message, so the enums must move to a file with a name ending in "-enums.proto".`,
 	},
 	{
 		Path:        "acme/v1/user.proto",

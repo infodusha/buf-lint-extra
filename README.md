@@ -3,11 +3,12 @@
 Extra lint rules for [buf](https://buf.build), packaged as a
 [buf check plugin](https://buf.build/docs/cli/buf-plugins/overview/).
 
-| Rule                  | Default | What it checks                                                                                                                              |
-| --------------------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
-| `ENUM_DEDICATED_FILE` | on      | Enums live at the top level of files that declare nothing but enums: no messages, services, or extensions, and no enums nested in messages. |
-| `ENUM_FILE_SUFFIX`    | off     | Files that declare top-level enums have a name ending in a suffix (`_enum` by default), and files with that suffix declare top-level enums. |
-| `PACKAGE_CAMEL_CASE`  | off     | Package names are camelCase: every dot-separated component starts with a lowercase letter and contains no underscores.                      |
+| Rule                    | Default | What it checks                                                                                                                              |
+| ----------------------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| `ENUM_DEDICATED_FILE`   | on      | Enums live at the top level of files that declare nothing but enums: no messages, services, or extensions, and no enums nested in messages. |
+| `ENUM_FILE_SUFFIX`      | off     | Files that declare top-level enums have a name ending in a suffix (`_enum` by default), and files with that suffix declare top-level enums. |
+| `FILE_LOWER_KEBAB_CASE` | off     | File names are lower-kebab-case in each dot-separated segment, such as `user-service.proto` or `user-status.enum.proto`.                    |
+| `PACKAGE_CAMEL_CASE`    | off     | Package names are camelCase: every dot-separated component starts with a lowercase letter and contains no underscores.                      |
 
 ## Installation
 
@@ -89,13 +90,15 @@ lint:
     - STANDARD # omit if you do not want to use the rules builtin to buf
     - ENUM_DEDICATED_FILE
     - ENUM_FILE_SUFFIX
+    - FILE_LOWER_KEBAB_CASE
     - PACKAGE_CAMEL_CASE
   except:
+    - FILE_LOWER_SNAKE_CASE # part of STANDARD, contradicts FILE_LOWER_KEBAB_CASE
     - PACKAGE_LOWER_SNAKE_CASE # part of STANDARD, contradicts PACKAGE_CAMEL_CASE
 plugins:
   - plugin: buf-plugin-lint-extra
     options:
-      enum_file_suffix: _enum # optional, this is the default
+      enum_file_suffix: -enum # optional, the default is _enum
 ```
 
 When `lint.use` is set, only the listed rules and categories run, so plugin
@@ -188,6 +191,39 @@ Annotations are reported at the file level, because the fix is to rename the
 file. Use `lint.ignore` or `lint.ignore_only` in `buf.yaml` to exclude paths.
 
 The rule is off by default. Enable it by listing `ENUM_FILE_SUFFIX` in
+`lint.use`.
+
+### FILE_LOWER_KEBAB_CASE
+
+Checks that the file name, without its directories and the `.proto` extension,
+is lower-kebab-case: lowercase words separated by single hyphens. This is the
+kebab-case counterpart of the builtin `FILE_LOWER_SNAKE_CASE`, which wants
+`user_service.proto` where this rule wants `user-service.proto`. Words are
+split at underscores and at capital letters, so `UserService.proto` and
+`userService.proto` are flagged too, with `user-service.proto` as the
+suggestion.
+
+Dots separate segments, and each segment is checked on its own, so a dotted
+suffix such as `.enum.proto` is fine: `user-status.enum.proto` passes, and
+`User_Status.enum.proto` is flagged with `user-status.enum.proto` as the
+suggestion. The builtin rule differs here, it treats dots as word separators.
+
+```
+acme/v1/order_item.proto:1:1:Filename "order_item.proto" should be lower-kebab-case.proto, such as "order-item.proto".
+acme/v1/User_Status.enum.proto:1:1:Filename "User_Status.enum.proto" should be lower-kebab-case.proto, such as "user-status.enum.proto".
+```
+
+Annotations are reported at the file level, because the fix is to rename the
+file. Use `lint.ignore` or `lint.ignore_only` in `buf.yaml` to exclude paths.
+
+The rule contradicts `FILE_LOWER_SNAKE_CASE`, which is part of the `STANDARD`
+category, so list that rule in `lint.except` when using it. Directories are
+not checked, so `PACKAGE_DIRECTORY_MATCH` is unaffected. When combined with
+`ENUM_FILE_SUFFIX`, set `enum_file_suffix` to a kebab-case suffix such as
+`-enum`, or to a dotted one such as `.enum`, since the default `_enum` would
+be flagged.
+
+The rule is off by default. Enable it by listing `FILE_LOWER_KEBAB_CASE` in
 `lint.use`.
 
 ### PACKAGE_CAMEL_CASE
