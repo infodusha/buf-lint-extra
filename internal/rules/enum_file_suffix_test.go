@@ -164,7 +164,7 @@ func TestEnumFileSuffixWithEnumDedicatedFile(t *testing.T) {
 		ExpectedAnnotations: []checktest.ExpectedAnnotation{
 			{
 				RuleID:  EnumDedicatedFileRuleID,
-				Message: `Enum "Status" must be declared in a dedicated file that contains only enums, but this file also declares 1 message and 1 service.`,
+				Message: `Enum "Status" must be declared in a file of its own, but this file also declares 1 message and 1 service.`,
 				FileLocation: &checktest.ExpectedFileLocation{
 					FileName:    "mixed.proto",
 					StartLine:   4,

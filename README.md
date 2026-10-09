@@ -5,7 +5,7 @@ Extra lint rules for [buf](https://buf.build), packaged as a
 
 | Rule                            | Default | What it checks                                                                                                                                                        |
 | ------------------------------- | ------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `ENUM_DEDICATED_FILE`           | on      | Enums live at the top level of files that declare nothing but enums: no messages, services, or extensions, and no enums nested in messages.                           |
+| `ENUM_DEDICATED_FILE`           | on      | Each enum lives at the top level of a file of its own: no other enums, messages, services, or extensions, and no enums nested in messages.                            |
 | `ENUM_DEDICATED_PACKAGE`        | off     | Files that declare only enums have a package whose last component is the name of the enum, in any case style, so every enum gets a package of its own.                |
 | `ENUM_FILE_MATCH`               | off     | Files that declare only enums are named after the enum, in any case style, with or without the enum file suffix.                                                      |
 | `ENUM_FILE_SUFFIX`              | off     | Files that declare top-level enums have a name ending in a suffix (`_enum` by default), and files with that suffix declare top-level enums.                           |
@@ -124,21 +124,21 @@ Everything else works as for the builtin rules: `except`, `ignore`,
 
 ### ENUM_DEDICATED_FILE
 
-Reports every enum that is not declared at the top level of a file containing
-only enums:
+Reports every enum that is not the only declaration of its file:
 
-- a top-level enum in a file that also declares messages, services, or
-  extensions;
+- a top-level enum in a file that also declares other enums, messages,
+  services, or extensions;
 - an enum nested in a message, at any depth.
 
 Nested enums are reported because code generators emit them inside the module
 of their message. ts-proto, for example, generates `User.Role` as `User_Role`
 in the module of `User`, so code that needs only the enum has to import every
-message of that file. A file with only file options, imports, and enums is
-fine.
+message of that file. Two enums in one file are reported for the same reason:
+importing one of them brings in the other. A file with only file options,
+imports, and a single enum is fine.
 
 ```proto
-// user.proto: flagged, Status and Role have to move to their own file
+// user.proto: flagged, Status and Role have to move to files of their own
 enum Status {
   STATUS_UNSPECIFIED = 0;
 }
@@ -154,19 +154,16 @@ message User {
 ```
 
 ```proto
-// status_enum.proto: ok, the file declares only enums
+// status_enum.proto: ok, the file declares a single enum
 enum Status {
   STATUS_UNSPECIFIED = 0;
 }
-
-enum Role {
-  ROLE_UNSPECIFIED = 0;
-}
 ```
 
 ```
-acme/v1/user.proto:5:1:Enum "Status" must be declared in a dedicated file that contains only enums, but this file also declares 1 message.
-acme/v1/user.proto:10:3:Enum "User.Role" must be declared at the top level of a dedicated file that contains only enums, not nested in message "User".
+acme/v1/user.proto:5:1:Enum "Status" must be declared in a file of its own, but this file also declares 1 message.
+acme/v1/user.proto:10:3:Enum "User.Role" must be declared at the top level of a file of its own, not nested in message "User".
+acme/v1/enums.proto:5:1:Enum "Status" must be declared in a file of its own, but this file also declares 1 other enum.
 ```
 
 The annotation is attached to the enum, so a single enum, top-level or nested,

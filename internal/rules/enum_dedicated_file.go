@@ -13,7 +13,7 @@ var enumDedicatedFileRule = newRule(
 	&check.RuleSpec{
 		ID:      EnumDedicatedFileRuleID,
 		Default: true,
-		Purpose: "Checks that enums are declared at the top level of dedicated files that contain no messages, services, or extensions, and are not nested in messages.",
+		Purpose: "Checks that each enum is declared at the top level of a file of its own, with no other enums, messages, services, or extensions, and not nested in a message.",
 		Type:    check.RuleTypeLint,
 	},
 	checkEnumDedicatedFile,
@@ -21,11 +21,15 @@ var enumDedicatedFileRule = newRule(
 
 func checkEnumDedicatedFile(file fileSummary, _ checkRequest) ([]annotation, error) {
 	var annotations []annotation
-	if others := nonEnumDeclarations(file); others != "" {
+	parts := nonEnumDeclarationParts(file)
+	if n := len(file.enums) - 1; n > 0 {
+		parts = append([]string{countNoun(n, "other enum")}, parts...)
+	}
+	if others := joinWithAnd(parts); others != "" {
 		for i, enum := range file.enums {
 			annotations = append(annotations, annotation{
 				message: fmt.Sprintf(
-					"Enum %q must be declared in a dedicated file that contains only enums, but this file also declares %s.",
+					"Enum %q must be declared in a file of its own, but this file also declares %s.",
 					enum,
 					others,
 				),
@@ -36,7 +40,7 @@ func checkEnumDedicatedFile(file fileSummary, _ checkRequest) ([]annotation, err
 	for _, enum := range file.nestedEnums {
 		annotations = append(annotations, annotation{
 			message: fmt.Sprintf(
-				"Enum %q must be declared at the top level of a dedicated file that contains only enums, not nested in message %q.",
+				"Enum %q must be declared at the top level of a file of its own, not nested in message %q.",
 				enum.name,
 				enum.message,
 			),
@@ -49,6 +53,10 @@ func checkEnumDedicatedFile(file fileSummary, _ checkRequest) ([]annotation, err
 // nonEnumDeclarations returns a summary such as "2 messages and 1 service",
 // or "" if the file declares nothing but enums.
 func nonEnumDeclarations(file fileSummary) string {
+	return joinWithAnd(nonEnumDeclarationParts(file))
+}
+
+func nonEnumDeclarationParts(file fileSummary) []string {
 	var parts []string
 	for _, kind := range []struct {
 		count int
@@ -58,16 +66,18 @@ func nonEnumDeclarations(file fileSummary) string {
 		{file.services, "service"},
 		{file.extensions, "extension"},
 	} {
-		if kind.count == 0 {
-			continue
+		if kind.count > 0 {
+			parts = append(parts, countNoun(kind.count, kind.noun))
 		}
-		noun := kind.noun
-		if kind.count != 1 {
-			noun += "s"
-		}
-		parts = append(parts, fmt.Sprintf("%d %s", kind.count, noun))
 	}
-	return joinWithAnd(parts)
+	return parts
+}
+
+func countNoun(count int, noun string) string {
+	if count != 1 {
+		noun += "s"
+	}
+	return fmt.Sprintf("%d %s", count, noun)
 }
 
 func joinWithAnd(parts []string) string {

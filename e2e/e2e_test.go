@@ -107,7 +107,7 @@ var expectedAnnotations = []annotation{
 		StartLine:   6,
 		StartColumn: 3,
 		Type:        "ENUM_DEDICATED_FILE",
-		Message:     `Enum "Order.State" must be declared at the top level of a dedicated file that contains only enums, not nested in message "Order".`,
+		Message:     `Enum "Order.State" must be declared at the top level of a file of its own, not nested in message "Order".`,
 	},
 	{
 		Path:        "acme/v1/order_item.proto",
@@ -128,7 +128,7 @@ var expectedAnnotations = []annotation{
 		StartLine:   5,
 		StartColumn: 1,
 		Type:        "ENUM_DEDICATED_FILE",
-		Message:     `Enum "Status" must be declared in a dedicated file that contains only enums, but this file also declares 1 message.`,
+		Message:     `Enum "Status" must be declared in a file of its own, but this file also declares 1 message.`,
 	},
 }
 

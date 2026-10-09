@@ -17,12 +17,12 @@ func TestEnumDedicatedFile(t *testing.T) {
 		expectedAnnotations []checktest.ExpectedAnnotation
 	}{
 		{
-			name: "enums mixed with a message and a service are flagged once per enum",
+			name: "enums mixed with another enum, a message and a service are flagged once per enum",
 			file: "mixed.proto",
 			expectedAnnotations: []checktest.ExpectedAnnotation{
 				{
 					RuleID:  EnumDedicatedFileRuleID,
-					Message: `Enum "Status" must be declared in a dedicated file that contains only enums, but this file also declares 1 message and 1 service.`,
+					Message: `Enum "Status" must be declared in a file of its own, but this file also declares 1 other enum, 1 message and 1 service.`,
 					FileLocation: &checktest.ExpectedFileLocation{
 						FileName:    "mixed.proto",
 						StartLine:   4,
@@ -33,7 +33,7 @@ func TestEnumDedicatedFile(t *testing.T) {
 				},
 				{
 					RuleID:  EnumDedicatedFileRuleID,
-					Message: `Enum "Role" must be declared in a dedicated file that contains only enums, but this file also declares 1 message and 1 service.`,
+					Message: `Enum "Role" must be declared in a file of its own, but this file also declares 1 other enum, 1 message and 1 service.`,
 					FileLocation: &checktest.ExpectedFileLocation{
 						FileName:    "mixed.proto",
 						StartLine:   13,
@@ -50,7 +50,7 @@ func TestEnumDedicatedFile(t *testing.T) {
 			expectedAnnotations: []checktest.ExpectedAnnotation{
 				{
 					RuleID:  EnumDedicatedFileRuleID,
-					Message: `Enum "Color" must be declared in a dedicated file that contains only enums, but this file also declares 1 extension.`,
+					Message: `Enum "Color" must be declared in a file of its own, but this file also declares 1 extension.`,
 					FileLocation: &checktest.ExpectedFileLocation{
 						FileName:    "with_extension.proto",
 						StartLine:   6,
@@ -62,8 +62,36 @@ func TestEnumDedicatedFile(t *testing.T) {
 			},
 		},
 		{
-			name: "file with only enums and file options is accepted",
+			name: "file with a single enum and file options is accepted",
 			file: "enum_only.proto",
+		},
+		{
+			name: "file with two enums is flagged once per enum",
+			file: "two_enums.proto",
+			expectedAnnotations: []checktest.ExpectedAnnotation{
+				{
+					RuleID:  EnumDedicatedFileRuleID,
+					Message: `Enum "Status" must be declared in a file of its own, but this file also declares 1 other enum.`,
+					FileLocation: &checktest.ExpectedFileLocation{
+						FileName:    "two_enums.proto",
+						StartLine:   6,
+						StartColumn: 0,
+						EndLine:     8,
+						EndColumn:   1,
+					},
+				},
+				{
+					RuleID:  EnumDedicatedFileRuleID,
+					Message: `Enum "Role" must be declared in a file of its own, but this file also declares 1 other enum.`,
+					FileLocation: &checktest.ExpectedFileLocation{
+						FileName:    "two_enums.proto",
+						StartLine:   10,
+						StartColumn: 0,
+						EndLine:     12,
+						EndColumn:   1,
+					},
+				},
+			},
 		},
 		{
 			name: "enums nested in messages are flagged at any depth",
@@ -71,7 +99,7 @@ func TestEnumDedicatedFile(t *testing.T) {
 			expectedAnnotations: []checktest.ExpectedAnnotation{
 				{
 					RuleID:  EnumDedicatedFileRuleID,
-					Message: `Enum "User.Kind" must be declared at the top level of a dedicated file that contains only enums, not nested in message "User".`,
+					Message: `Enum "User.Kind" must be declared at the top level of a file of its own, not nested in message "User".`,
 					FileLocation: &checktest.ExpectedFileLocation{
 						FileName:    "nested.proto",
 						StartLine:   5,
@@ -82,7 +110,7 @@ func TestEnumDedicatedFile(t *testing.T) {
 				},
 				{
 					RuleID:  EnumDedicatedFileRuleID,
-					Message: `Enum "User.Address.Type" must be declared at the top level of a dedicated file that contains only enums, not nested in message "User.Address".`,
+					Message: `Enum "User.Address.Type" must be declared at the top level of a file of its own, not nested in message "User.Address".`,
 					FileLocation: &checktest.ExpectedFileLocation{
 						FileName:    "nested.proto",
 						StartLine:   10,
@@ -93,7 +121,7 @@ func TestEnumDedicatedFile(t *testing.T) {
 				},
 				{
 					RuleID:  EnumDedicatedFileRuleID,
-					Message: `Enum "Team.Visibility" must be declared at the top level of a dedicated file that contains only enums, not nested in message "Team".`,
+					Message: `Enum "Team.Visibility" must be declared at the top level of a file of its own, not nested in message "Team".`,
 					FileLocation: &checktest.ExpectedFileLocation{
 						FileName:    "nested.proto",
 						StartLine:   23,
@@ -110,7 +138,7 @@ func TestEnumDedicatedFile(t *testing.T) {
 			expectedAnnotations: []checktest.ExpectedAnnotation{
 				{
 					RuleID:  EnumDedicatedFileRuleID,
-					Message: `Enum "Status" must be declared in a dedicated file that contains only enums, but this file also declares 1 message.`,
+					Message: `Enum "Status" must be declared in a file of its own, but this file also declares 1 message.`,
 					FileLocation: &checktest.ExpectedFileLocation{
 						FileName:    "mixed_nested.proto",
 						StartLine:   4,
@@ -121,7 +149,7 @@ func TestEnumDedicatedFile(t *testing.T) {
 				},
 				{
 					RuleID:  EnumDedicatedFileRuleID,
-					Message: `Enum "User.Kind" must be declared at the top level of a dedicated file that contains only enums, not nested in message "User".`,
+					Message: `Enum "User.Kind" must be declared at the top level of a file of its own, not nested in message "User".`,
 					FileLocation: &checktest.ExpectedFileLocation{
 						FileName:    "mixed_nested.proto",
 						StartLine:   9,
