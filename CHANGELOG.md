@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.7.0](https://github.com/infodusha/buf-lint-extra/compare/v0.6.1...v0.7.0) (2026-10-09)
+
+
+### Features
+
+* suggest names that match the enabled rules ([5bb7cfd](https://github.com/infodusha/buf-lint-extra/commit/5bb7cfd24ad5cb16294b9788edd2639560190677))
+
+
+### Bug Fixes
+
+* **deps:** bump the go group with 3 updates ([73cbd1e](https://github.com/infodusha/buf-lint-extra/commit/73cbd1e520985352c79f836319743a61f3abd7fe))
+* **deps:** bump the go group with 3 updates ([#14](https://github.com/infodusha/buf-lint-extra/issues/14)) ([56f3121](https://github.com/infodusha/buf-lint-extra/commit/56f31214ba5a7317cb12744f4dbbcf35a9c356a8))
+
 ## [0.6.1](https://github.com/infodusha/buf-lint-extra/compare/v0.6.0...v0.6.1) (2026-10-09)
 
 
