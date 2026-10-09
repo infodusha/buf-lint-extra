@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.4.0](https://github.com/infodusha/buf-lint-extra/compare/v0.3.2...v0.4.0) (2026-10-09)
+
+
+### Features
+
+* add FILE_LOWER_KEBAB_CASE rule ([db8b510](https://github.com/infodusha/buf-lint-extra/commit/db8b510f176881736f5a51cfe763e4510946c32a))
+* add PACKAGE_CAMEL_CASE rule ([387bccb](https://github.com/infodusha/buf-lint-extra/commit/387bccb55beee47374641f77c6ee2c8725af7c87))
+* add PACKAGE_DIRECTORY_MATCH_EXTRA rule ([e34e779](https://github.com/infodusha/buf-lint-extra/commit/e34e7793155961925cf8e661cf9a6785c9e6d703))
+
+
+### Bug Fixes
+
+* **deps:** bump the go group with 2 updates ([c74032f](https://github.com/infodusha/buf-lint-extra/commit/c74032f3e422118dbc2d65bad073933f77f09fb4))
+* **deps:** bump the go group with 2 updates ([#9](https://github.com/infodusha/buf-lint-extra/issues/9)) ([644ecf6](https://github.com/infodusha/buf-lint-extra/commit/644ecf60c2ea1a5ffb97247c6f9adc37600cd526))
+
 ## [0.3.2](https://github.com/infodusha/buf-lint-extra/compare/v0.3.1...v0.3.2) (2026-10-02)
 
 
