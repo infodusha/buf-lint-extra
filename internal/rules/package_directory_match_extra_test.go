@@ -13,6 +13,8 @@ func TestPackageDirectoryMatchExtra(t *testing.T) {
 
 	const testdataDir = "testdata/package_directory_match_extra"
 
+	withEnumDedicatedPackage := []string{PackageDirectoryMatchExtraRuleID, EnumDedicatedPackageRuleID}
+
 	for _, testCase := range []struct {
 		name                string
 		file                string
@@ -192,7 +194,7 @@ func TestPackageDirectoryMatchExtra(t *testing.T) {
 			},
 		},
 		{
-			name: "enum component is required in the directory by default",
+			name: "enum file needs a directory of its own without ENUM_DEDICATED_PACKAGE",
 			file: "app/test/dedicated.proto",
 			expectedAnnotations: []checktest.ExpectedAnnotation{
 				{
@@ -209,14 +211,14 @@ func TestPackageDirectoryMatchExtra(t *testing.T) {
 			},
 		},
 		{
-			name:    "enum component is excluded from the directory when enabled",
+			name:    "enum file sits in the directory of the parent package with ENUM_DEDICATED_PACKAGE",
 			file:    "app/test/dedicated.proto",
-			options: map[string]any{PackageDirectoryEnumComponentOptionKey: "excluded"},
+			ruleIDs: withEnumDedicatedPackage,
 		},
 		{
-			name:    "enum file in the directory of the enum component is flagged when enabled",
+			name:    "enum file in a directory of its own is flagged with ENUM_DEDICATED_PACKAGE",
 			file:    "app/test/isolated/isolated.proto",
-			options: map[string]any{PackageDirectoryEnumComponentOptionKey: "excluded"},
+			ruleIDs: withEnumDedicatedPackage,
 			expectedAnnotations: []checktest.ExpectedAnnotation{
 				{
 					RuleID:  PackageDirectoryMatchExtraRuleID,
@@ -234,7 +236,7 @@ func TestPackageDirectoryMatchExtra(t *testing.T) {
 		{
 			name:    "file with enums and messages keeps the enum component",
 			file:    "app/test/mixed.proto",
-			options: map[string]any{PackageDirectoryEnumComponentOptionKey: "excluded"},
+			ruleIDs: withEnumDedicatedPackage,
 			expectedAnnotations: []checktest.ExpectedAnnotation{
 				{
 					RuleID:  PackageDirectoryMatchExtraRuleID,
@@ -252,37 +254,18 @@ func TestPackageDirectoryMatchExtra(t *testing.T) {
 		{
 			name:    "enum file whose package is only the enum component is not checked",
 			file:    "anywhere/status.proto",
-			options: map[string]any{PackageDirectoryEnumComponentOptionKey: "excluded"},
-		},
-		{
-			name:    "enum component is excluded by default when ENUM_DEDICATED_PACKAGE runs",
-			file:    "app/test/dedicated.proto",
-			ruleIDs: []string{PackageDirectoryMatchExtraRuleID, EnumDedicatedPackageRuleID},
-		},
-		{
-			name:    "included keeps the enum component when ENUM_DEDICATED_PACKAGE runs",
-			file:    "app/test/dedicated.proto",
-			ruleIDs: []string{PackageDirectoryMatchExtraRuleID, EnumDedicatedPackageRuleID},
-			options: map[string]any{PackageDirectoryEnumComponentOptionKey: "included"},
-			expectedAnnotations: []checktest.ExpectedAnnotation{
-				{
-					RuleID:  PackageDirectoryMatchExtraRuleID,
-					Message: `Files with package "app.test.dedicated" must be within a directory "app/test/dedicated" relative to root but were in directory "app/test".`,
-					FileLocation: &checktest.ExpectedFileLocation{
-						FileName:    "app/test/dedicated.proto",
-						StartLine:   2,
-						StartColumn: 0,
-						EndLine:     2,
-						EndColumn:   27,
-					},
-				},
-			},
+			ruleIDs: withEnumDedicatedPackage,
 		},
 		{
 			name:    "last component that is not the enum name is kept",
 			file:    "app/test/kind.proto",
-			options: map[string]any{PackageDirectoryEnumComponentOptionKey: "excluded"},
+			ruleIDs: withEnumDedicatedPackage,
 			expectedAnnotations: []checktest.ExpectedAnnotation{
+				{
+					RuleID:       EnumDedicatedPackageRuleID,
+					Message:      `Enum "Kind" must be declared in a package named after it, such as "app.test.kind", but the package is "app.test.enums".`,
+					FileLocation: enumLocation("app/test/kind.proto", 0),
+				},
 				{
 					RuleID:  PackageDirectoryMatchExtraRuleID,
 					Message: `Files with package "app.test.enums" must be within a directory "app/test/enums" relative to root but were in directory "app/test".`,
@@ -299,15 +282,15 @@ func TestPackageDirectoryMatchExtra(t *testing.T) {
 		{
 			name:    "enum component matches the enum name in any case style",
 			file:    "app/test/order-status.proto",
-			options: map[string]any{PackageDirectoryEnumComponentOptionKey: "excluded"},
+			ruleIDs: withEnumDedicatedPackage,
 		},
 		{
-			name: "all options combine",
-			file: "app/main-goal/status.proto",
+			name:    "all options combine",
+			file:    "app/main-goal/status.proto",
+			ruleIDs: withEnumDedicatedPackage,
 			options: map[string]any{
 				PackageDirectoryExcludedPrefixesOptionKey: []string{"legacy"},
 				PackageDirectoryCaseOptionKey:             "lower-kebab-case",
-				PackageDirectoryEnumComponentOptionKey:    "excluded",
 			},
 		},
 	} {
@@ -350,16 +333,6 @@ func TestPackageDirectoryMatchExtraInvalidOptions(t *testing.T) {
 			name:    "non-string case",
 			options: map[string]any{PackageDirectoryCaseOptionKey: true},
 			key:     PackageDirectoryCaseOptionKey,
-		},
-		{
-			name:    "unknown enum component value",
-			options: map[string]any{PackageDirectoryEnumComponentOptionKey: "dropped"},
-			key:     PackageDirectoryEnumComponentOptionKey,
-		},
-		{
-			name:    "non-string enum component value",
-			options: map[string]any{PackageDirectoryEnumComponentOptionKey: true},
-			key:     PackageDirectoryEnumComponentOptionKey,
 		},
 		{
 			name:    "prefixes as a single string",

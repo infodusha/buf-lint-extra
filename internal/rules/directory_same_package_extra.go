@@ -15,24 +15,17 @@ var directorySamePackageExtraRule = newFilesRule(
 	&check.RuleSpec{
 		ID:      DirectorySamePackageExtraRuleID,
 		Default: false,
-		Purpose: "Checks that all files in a given directory are in the same package, like DIRECTORY_SAME_PACKAGE, counting enum files as files of their parent package when the component named after the enum is excluded from the directory.",
+		Purpose: "Checks that all files in a given directory are in the same package, like DIRECTORY_SAME_PACKAGE, counting enum files as files of their parent package when ENUM_DEDICATED_PACKAGE is enabled.",
 		Type:    check.RuleTypeLint,
 	},
 	checkDirectorySamePackageExtra,
 )
 
 func checkDirectorySamePackageExtra(files []fileSummary, request checkRequest) ([]fileAnnotation, error) {
-	excludeEnumComponent, err := packageDirectoryExcludeEnumComponent(request)
-	if err != nil {
-		return nil, err
-	}
 	packagesByDir := map[string][]string{}
 	for _, file := range files {
 		dir := path.Dir(file.name)
-		pkg := file.pkg
-		if excludeEnumComponent {
-			pkg = trimEnumComponent(pkg, file)
-		}
+		pkg := trimEnumComponent(file.pkg, file, request)
 		if !slices.Contains(packagesByDir[dir], pkg) {
 			packagesByDir[dir] = append(packagesByDir[dir], pkg)
 		}

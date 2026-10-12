@@ -17,7 +17,6 @@ const (
 
 	PackageDirectoryExcludedPrefixesOptionKey = "package_directory_excluded_prefixes"
 	PackageDirectoryCaseOptionKey             = "package_directory_case"
-	PackageDirectoryEnumComponentOptionKey    = "package_directory_enum_component"
 )
 
 var packageDirectoryCases = map[string]func(string) string{
@@ -29,7 +28,7 @@ var packageDirectoryMatchExtraRule = newRule(
 	&check.RuleSpec{
 		ID:      PackageDirectoryMatchExtraRuleID,
 		Default: false,
-		Purpose: "Checks that files are in a directory matching their package, like PACKAGE_DIRECTORY_MATCH, with options to exclude package prefixes, to convert the components to a case, and to exclude the component named after the enum of an enum file.",
+		Purpose: "Checks that files are in a directory matching their package, like PACKAGE_DIRECTORY_MATCH, with options to exclude package prefixes and to convert the case, leaving out the enum's own component when ENUM_DEDICATED_PACKAGE is enabled.",
 		Type:    check.RuleTypeLint,
 	},
 	checkPackageDirectoryMatchExtra,
@@ -44,14 +43,7 @@ func checkPackageDirectoryMatchExtra(file fileSummary, request checkRequest) ([]
 	if err != nil {
 		return nil, err
 	}
-	excludeEnumComponent, err := packageDirectoryExcludeEnumComponent(request)
-	if err != nil {
-		return nil, err
-	}
-	pkg := trimPackagePrefix(file.pkg, prefixes)
-	if excludeEnumComponent {
-		pkg = trimEnumComponent(pkg, file)
-	}
+	pkg := trimEnumComponent(trimPackagePrefix(file.pkg, prefixes), file, request)
 	if pkg == "" {
 		return nil, nil
 	}
@@ -88,27 +80,6 @@ func packageDirectoryExcludedPrefixes(options option.Options) ([]string, error) 
 	return prefixes, nil
 }
 
-// packageDirectoryExcludeEnumComponent reports whether the component named
-// after the enum is left out of the directory. Unless the option says so, it
-// is left out exactly when ENUM_DEDICATED_PACKAGE runs in the same request,
-// since that rule gives every enum file such a component.
-func packageDirectoryExcludeEnumComponent(request checkRequest) (bool, error) {
-	value, err := option.GetStringValue(request.options, PackageDirectoryEnumComponentOptionKey)
-	if err != nil {
-		return false, err
-	}
-	switch value {
-	case "":
-		return request.enables(enumDedicatedPackageRule), nil
-	case "included":
-		return false, nil
-	case "excluded":
-		return true, nil
-	default:
-		return false, fmt.Errorf("option %q must be \"included\" or \"excluded\", got %q", PackageDirectoryEnumComponentOptionKey, value)
-	}
-}
-
 func packageDirectoryCase(options option.Options) (func(string) string, error) {
 	value, err := option.GetStringValue(options, PackageDirectoryCaseOptionKey)
 	if err != nil {
@@ -141,11 +112,12 @@ func trimPackagePrefix(pkg string, prefixes []string) string {
 	return strings.TrimPrefix(strings.TrimPrefix(pkg, longest), ".")
 }
 
-// trimEnumComponent removes the last component of pkg when the package of
-// file is named after one of its enums, so the package ENUM_DEDICATED_PACKAGE
-// asks for becomes its parent.
-func trimEnumComponent(pkg string, file fileSummary) string {
-	if file.dedicatedEnum() >= 0 {
+// trimEnumComponent removes the last component of pkg when ENUM_DEDICATED_PACKAGE
+// runs in the request and the package of file is named after one of its enums,
+// so the package that rule asks for becomes its parent and the enum file sits
+// next to the files of the parent.
+func trimEnumComponent(pkg string, file fileSummary, request checkRequest) string {
+	if request.enables(enumDedicatedPackageRule) && file.dedicatedEnum() >= 0 {
 		parent, _ := splitLastComponent(pkg)
 		return parent
 	}

@@ -71,7 +71,6 @@ func TestServerMatchesSpec(t *testing.T) {
 						EnumFileSuffixOptionKey:                   "_enums",
 						PackageDirectoryExcludedPrefixesOptionKey: []string{"test", "legacy"},
 						PackageDirectoryCaseOptionKey:             "lower-kebab-case",
-						PackageDirectoryEnumComponentOptionKey:    "excluded",
 					},
 				},
 				{
