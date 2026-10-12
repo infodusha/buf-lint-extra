@@ -4,6 +4,7 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 	"testing"
 
@@ -51,7 +52,7 @@ func TestServerMatchesSpec(t *testing.T) {
 		for _, file := range files {
 			fileSets = append(fileSets, []string{file})
 		}
-		if dir == directorySamePackageExtraTestdataDir {
+		if slices.Contains([]string{directorySamePackageExtraTestdataDir, enumDedicatedPackageTestdataDir}, dir) {
 			fileSets = append(fileSets, files)
 		}
 		for _, fileSet := range fileSets {

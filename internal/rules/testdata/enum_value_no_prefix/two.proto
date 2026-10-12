@@ -1,0 +1,11 @@
+syntax = "proto3";
+
+package app.test.status;
+
+enum Status {
+  STATUS_UNSPECIFIED = 0;
+}
+
+enum Kind {
+  KIND_UNSPECIFIED = 0;
+}

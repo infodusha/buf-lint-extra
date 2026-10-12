@@ -30,7 +30,7 @@ func checkEnumDedicatedFile(file fileSummary, _ checkRequest) ([]annotation, err
 			annotations = append(annotations, annotation{
 				message: fmt.Sprintf(
 					"Enum %q must be declared in a file of its own, but this file also declares %s.",
-					enum,
+					enum.name,
 					others,
 				),
 				sourcePath: []int32{int32(fileDescriptorProtoEnumType.number), int32(i)},

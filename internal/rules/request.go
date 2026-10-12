@@ -30,7 +30,10 @@ var (
 	descriptorProtoNestedType = field{3, protowire.BytesType}
 	descriptorProtoEnumType   = field{4, protowire.BytesType}
 
-	enumDescriptorProtoName = field{1, protowire.BytesType}
+	enumDescriptorProtoName  = field{1, protowire.BytesType}
+	enumDescriptorProtoValue = field{2, protowire.BytesType}
+
+	enumValueDescriptorProtoName = field{1, protowire.BytesType}
 )
 
 type rawCheckRequest struct {
@@ -99,11 +102,11 @@ func parseFileDescriptorProto(data []byte) (fileSummary, error) {
 			file.nestedEnums, err = parseDescriptorProtoNestedEnums(file.nestedEnums, value, "", sourcePath)
 			return err
 		case fileDescriptorProtoEnumType:
-			name, err := parseEnumDescriptorProtoName(value)
+			enum, err := parseEnumDescriptorProto(value)
 			if err != nil {
 				return err
 			}
-			file.enums = append(file.enums, name)
+			file.enums = append(file.enums, enum)
 		case fileDescriptorProtoService:
 			file.services++
 		case fileDescriptorProtoExtension:
@@ -137,13 +140,13 @@ func parseDescriptorProtoNestedEnums(
 		return nil, err
 	}
 	name = qualifiedName(scope, name)
-	for i, enum := range enums {
-		enumName, err := parseEnumDescriptorProtoName(enum)
+	for i, raw := range enums {
+		enum, err := parseEnumDescriptorProto(raw)
 		if err != nil {
 			return nil, err
 		}
 		nestedEnums = append(nestedEnums, nestedEnum{
-			name:       qualifiedName(name, enumName),
+			name:       qualifiedName(name, enum.name),
 			message:    name,
 			sourcePath: childSourcePath(sourcePath, descriptorProtoEnumType, i),
 		})
@@ -162,10 +165,28 @@ func parseDescriptorProtoNestedEnums(
 	return nestedEnums, nil
 }
 
-func parseEnumDescriptorProtoName(data []byte) (string, error) {
+func parseEnumDescriptorProto(data []byte) (enumSummary, error) {
+	var enum enumSummary
+	err := rangeFields(data, func(f field, value []byte) error {
+		switch f {
+		case enumDescriptorProtoName:
+			enum.name = string(value)
+		case enumDescriptorProtoValue:
+			name, err := parseEnumValueDescriptorProtoName(value)
+			if err != nil {
+				return err
+			}
+			enum.values = append(enum.values, name)
+		}
+		return nil
+	})
+	return enum, err
+}
+
+func parseEnumValueDescriptorProtoName(data []byte) (string, error) {
 	var name string
 	err := rangeFields(data, func(f field, value []byte) error {
-		if f == enumDescriptorProtoName {
+		if f == enumValueDescriptorProtoName {
 			name = string(value)
 		}
 		return nil

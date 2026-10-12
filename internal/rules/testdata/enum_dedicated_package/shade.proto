@@ -1,0 +1,7 @@
+syntax = "proto3";
+
+package app.test.color;
+
+enum Shade {
+  SHADE_UNSPECIFIED = 0;
+}

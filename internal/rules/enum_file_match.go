@@ -40,17 +40,17 @@ func checkEnumFileMatch(file fileSummary, request checkRequest) ([]annotation, e
 	}
 	var annotations []annotation
 	for i, enum := range file.enums {
-		if sameWords(enum, stem) || (hasSuffix && sameWords(enum, name)) {
+		if sameWords(enum.name, stem) || (hasSuffix && sameWords(enum.name, name)) {
 			continue
 		}
 		var files []string
 		for _, convert := range cases {
-			files = append(files, path.Join(path.Dir(file.name), convert(enum)+suggestedSuffix+protoFileExtension))
+			files = append(files, path.Join(path.Dir(file.name), convert(enum.name)+suggestedSuffix+protoFileExtension))
 		}
 		annotations = append(annotations, annotation{
 			message: fmt.Sprintf(
 				"Enum %q must be declared in a file named after it, such as %s, but the file is %q.",
-				enum,
+				enum.name,
 				quotedAlternatives(files),
 				file.name,
 			),

@@ -16,6 +16,10 @@ func toLowerSnakeCase(s string) string {
 	return strings.ToLower(strings.Join(splitWords(s), "_"))
 }
 
+func toUpperSnakeCase(s string) string {
+	return strings.ToUpper(strings.Join(splitWords(s), "_"))
+}
+
 func splitWords(s string) []string {
 	runes := []rune(s)
 	var words []string

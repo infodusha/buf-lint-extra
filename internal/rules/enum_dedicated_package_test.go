@@ -7,20 +7,20 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+const enumDedicatedPackageTestdataDir = "testdata/enum_dedicated_package"
+
+func enumLocation(file string, index int) *checktest.ExpectedFileLocation {
+	return &checktest.ExpectedFileLocation{
+		FileName:    file,
+		StartLine:   4 + 4*index,
+		StartColumn: 0,
+		EndLine:     6 + 4*index,
+		EndColumn:   1,
+	}
+}
+
 func TestEnumDedicatedPackage(t *testing.T) {
 	t.Parallel()
-
-	const testdataDir = "testdata/enum_dedicated_package"
-
-	enumLocation := func(file string, index int) *checktest.ExpectedFileLocation {
-		return &checktest.ExpectedFileLocation{
-			FileName:    file,
-			StartLine:   4 + 4*index,
-			StartColumn: 0,
-			EndLine:     6 + 4*index,
-			EndColumn:   1,
-		}
-	}
 
 	for _, testCase := range []struct {
 		name                string
@@ -79,7 +79,7 @@ func TestEnumDedicatedPackage(t *testing.T) {
 			expectedAnnotations: []checktest.ExpectedAnnotation{
 				{
 					RuleID:       EnumDedicatedPackageRuleID,
-					Message:      `Enum "Kind" must be declared in a package named after it, such as "app.test.kind", but the package is "app.test.status".`,
+					Message:      `Enum "Status" must be declared in a package named after it, such as "app.test.status", but the package is "app.test.kind".`,
 					FileLocation: enumLocation("two.proto", 1),
 				},
 			},
@@ -114,10 +114,89 @@ func TestEnumDedicatedPackage(t *testing.T) {
 			checktest.CheckTest{
 				Request: &checktest.RequestSpec{
 					Files: &checktest.ProtoFileSpec{
-						DirPaths:  []string{testdataDir},
+						DirPaths:  []string{enumDedicatedPackageTestdataDir},
 						FilePaths: []string{testCase.file},
 					},
 					RuleIDs: ruleIDs,
+				},
+				Spec:                Spec,
+				ExpectedAnnotations: testCase.expectedAnnotations,
+			}.Run(t)
+		})
+	}
+}
+
+func TestEnumDedicatedPackageOtherFiles(t *testing.T) {
+	t.Parallel()
+
+	packageAnnotation := func(file, pkg, message string) checktest.ExpectedAnnotation {
+		return checktest.ExpectedAnnotation{
+			RuleID:  EnumDedicatedPackageRuleID,
+			Message: message,
+			FileLocation: &checktest.ExpectedFileLocation{
+				FileName:  file,
+				StartLine: 2,
+				EndLine:   2,
+				EndColumn: len("package " + pkg + ";"),
+			},
+		}
+	}
+
+	for _, testCase := range []struct {
+		name                string
+		files               []string
+		expectedAnnotations []checktest.ExpectedAnnotation
+	}{
+		{
+			name:  "file with a message in the package of an enum file is flagged",
+			files: []string{"color.proto", "palette.proto"},
+			expectedAnnotations: []checktest.ExpectedAnnotation{
+				packageAnnotation("palette.proto", "app.test.color", `Package "app.test.color" is dedicated to enum "Color" declared in "color.proto", so this file must be in another package.`),
+			},
+		},
+		{
+			name:  "enum file is found whatever the order of the files",
+			files: []string{"palette.proto", "color.proto"},
+			expectedAnnotations: []checktest.ExpectedAnnotation{
+				packageAnnotation("palette.proto", "app.test.color", `Package "app.test.color" is dedicated to enum "Color" declared in "color.proto", so this file must be in another package.`),
+			},
+		},
+		{
+			name:  "file without declarations in the package of an enum file is flagged",
+			files: []string{"color.proto", "options.proto"},
+			expectedAnnotations: []checktest.ExpectedAnnotation{
+				packageAnnotation("options.proto", "app.test.color", `Package "app.test.color" is dedicated to enum "Color" declared in "color.proto", so this file must be in another package.`),
+			},
+		},
+		{
+			name:  "enum file in the package of another enum file is flagged at the enum alone",
+			files: []string{"color.proto", "shade.proto"},
+			expectedAnnotations: []checktest.ExpectedAnnotation{
+				{
+					RuleID:       EnumDedicatedPackageRuleID,
+					Message:      `Enum "Shade" must be declared in a package named after it, such as "app.test.shade", but the package is "app.test.color".`,
+					FileLocation: enumLocation("shade.proto", 0),
+				},
+			},
+		},
+		{
+			name:  "file in the parent package is accepted",
+			files: []string{"color.proto", "mixed.proto"},
+		},
+		{
+			name:  "package of a file with enums and messages is not dedicated",
+			files: []string{"theme.proto", "theme-settings.proto"},
+		},
+	} {
+		t.Run(testCase.name, func(t *testing.T) {
+			t.Parallel()
+			checktest.CheckTest{
+				Request: &checktest.RequestSpec{
+					Files: &checktest.ProtoFileSpec{
+						DirPaths:  []string{enumDedicatedPackageTestdataDir},
+						FilePaths: testCase.files,
+					},
+					RuleIDs: []string{EnumDedicatedPackageRuleID},
 				},
 				Spec:                Spec,
 				ExpectedAnnotations: testCase.expectedAnnotations,

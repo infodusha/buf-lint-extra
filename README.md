@@ -3,16 +3,17 @@
 Extra lint rules for [buf](https://buf.build), packaged as a
 [buf check plugin](https://buf.build/docs/cli/buf-plugins/overview/).
 
-| Rule                            | Default | What it checks                                                                                                                                                                      |
-| ------------------------------- | ------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `DIRECTORY_SAME_PACKAGE_EXTRA`  | off     | Files in a directory are in the same package, like the builtin rule, with enum files counted as files of their parent package when the enum component is left out of the directory. |
-| `ENUM_DEDICATED_FILE`           | off     | Each enum lives at the top level of a file of its own: no other enums, messages, services, or extensions, and no enums nested in messages.                                          |
-| `ENUM_DEDICATED_PACKAGE`        | off     | Files that declare only enums have a package whose last component is the name of the enum, in any case style, so every enum gets a package of its own.                              |
-| `ENUM_FILE_MATCH`               | off     | Files that declare only enums are named after the enum, in any case style, with or without the enum file suffix.                                                                    |
-| `ENUM_FILE_SUFFIX`              | off     | Files that declare top-level enums have a name ending in a suffix (`_enum` by default), and files with that suffix declare top-level enums.                                         |
-| `FILE_LOWER_KEBAB_CASE`         | off     | File names are lower-kebab-case in each dot-separated segment, such as `user-service.proto` or `user-status.enum.proto`.                                                            |
-| `PACKAGE_CAMEL_CASE`            | off     | Package names are camelCase: every dot-separated component starts with a lowercase letter and contains no underscores.                                                              |
-| `PACKAGE_DIRECTORY_MATCH_EXTRA` | off     | Files are in the directory matching their package, like the builtin rule, with options to exclude prefixes, convert the case, and leave out the enum's own component.               |
+| Rule                            | Default | What it checks                                                                                                                                                                                      |
+| ------------------------------- | ------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `DIRECTORY_SAME_PACKAGE_EXTRA`  | off     | Files in a directory are in the same package, like the builtin rule, with enum files counted as files of their parent package when the enum component is left out of the directory.                 |
+| `ENUM_DEDICATED_FILE`           | off     | Each enum lives at the top level of a file of its own: no other enums, messages, services, or extensions, and no enums nested in messages.                                                          |
+| `ENUM_DEDICATED_PACKAGE`        | off     | Files that declare only enums have a package whose last component is the name of the enum, in any case style, and no other file is in that package, so every enum gets a package of its own.        |
+| `ENUM_FILE_MATCH`               | off     | Files that declare only enums are named after the enum, in any case style, with or without the enum file suffix.                                                                                    |
+| `ENUM_FILE_SUFFIX`              | off     | Files that declare top-level enums have a name ending in a suffix (`_enum` by default), and files with that suffix declare top-level enums.                                                         |
+| `ENUM_VALUE_NO_PREFIX`          | off     | Values of an enum in a package of its own are not prefixed with the name of the enum, the inverse of the builtin `ENUM_VALUE_PREFIX`, since there is nothing in the package for them to clash with. |
+| `FILE_LOWER_KEBAB_CASE`         | off     | File names are lower-kebab-case in each dot-separated segment, such as `user-service.proto` or `user-status.enum.proto`.                                                                            |
+| `PACKAGE_CAMEL_CASE`            | off     | Package names are camelCase: every dot-separated component starts with a lowercase letter and contains no underscores.                                                                              |
+| `PACKAGE_DIRECTORY_MATCH_EXTRA` | off     | Files are in the directory matching their package, like the builtin rule, with options to exclude prefixes, convert the case, and leave out the enum's own component.                               |
 
 ## Installation
 
@@ -99,7 +100,8 @@ lint:
     - PACKAGE_VERSION_SUFFIX # contradicts ENUM_DEDICATED_PACKAGE
     - PACKAGE_LOWER_SNAKE_CASE # replaced by PACKAGE_CAMEL_CASE
     - FILE_LOWER_SNAKE_CASE # replaced by FILE_LOWER_KEBAB_CASE
-    - ENUM_VALUE_PREFIX # redundant with ENUM_DEDICATED_PACKAGE
+    - ENUM_VALUE_PREFIX # contradicts ENUM_VALUE_NO_PREFIX
+  enum_zero_value_suffix: UNSPECIFIED # ENUM_VALUE_NO_PREFIX leaves the zero value as UNSPECIFIED
 plugins:
   - plugin: buf-plugin-lint-extra
     options:
@@ -123,7 +125,8 @@ Everything else works as for the builtin rules: `except`, `ignore`,
 
 Every rule in `lint.except` above is part of `STANDARD` and clashes with a
 rule of the plugin, as described in the section of that rule; list only the
-entries for the plugin rules in use. The plugin cannot report such clashes
+entries for the plugin rules in use, and `enum_zero_value_suffix` only with
+`ENUM_VALUE_NO_PREFIX`. The plugin cannot report such clashes
 itself: `buf` sends a plugin only the IDs of its own enabled rules, not the
 builtin ones, and not the path of `buf.yaml`; see
 [bufbuild/buf#4722](https://github.com/bufbuild/buf/issues/4722).
@@ -262,6 +265,20 @@ camelCase form is. The annotation is attached to the enum, so it can be
 exempted with `// buf:lint:ignore ENUM_DEDICATED_PACKAGE` on the line above
 it.
 
+The package is then reserved for that enum. Every other file with the same
+package that declares messages, services, or extensions, or nothing at all,
+is reported, since its generated code would land in the module of the enum.
+Other enum files in the package are reported by the check above instead, as
+their enums are not named after it.
+
+```
+app/test/palette.proto:3:1:Package "app.test.color" is dedicated to enum "Color" declared in "app/test/color.proto", so this file must be in another package.
+```
+
+This annotation is attached to the `package` statement, so a file can be
+exempted with `// buf:lint:ignore ENUM_DEDICATED_PACKAGE` on the line above
+it.
+
 Such packages add a directory per enum under the builtin
 `PACKAGE_DIRECTORY_MATCH`. `PACKAGE_DIRECTORY_MATCH_EXTRA` leaves that
 component out of the directory whenever this rule is enabled, so the enum
@@ -276,10 +293,8 @@ category and wants the last component to be a version such as `v1`, so list
 that rule in `lint.except` when using it. `ENUM_VALUE_PREFIX`, also part of
 `STANDARD`, asks for every value to be prefixed with the name of its enum so
 that the values of the enums of one package do not clash. With every enum in a
-package of its own there is nothing to clash with, so the prefix can go: list
-that rule in `lint.except` as well, and set `enum_zero_value_suffix` to
-`UNSPECIFIED` under `lint`, since the builtin `ENUM_ZERO_VALUE_SUFFIX` expects
-`_UNSPECIFIED`.
+package of its own there is nothing to clash with, so the prefix can go;
+`ENUM_VALUE_NO_PREFIX` asks for exactly that.
 
 The rule is off by default. Enable it by listing `ENUM_DEDICATED_PACKAGE` in
 `lint.use`.
@@ -346,6 +361,62 @@ Annotations are reported at the file level, because the fix is to rename the
 file. Use `lint.ignore` or `lint.ignore_only` in `buf.yaml` to exclude paths.
 
 The rule is off by default. Enable it by listing `ENUM_FILE_SUFFIX` in
+`lint.use`.
+
+### ENUM_VALUE_NO_PREFIX
+
+Checks that the values of an enum in a package of its own are not prefixed
+with the name of the enum, the inverse of the builtin `ENUM_VALUE_PREFIX`.
+That rule asks for `STATUS_ACTIVE` rather than `ACTIVE` because the values of
+all the enums of a package share one scope, so two enums with a value `ACTIVE`
+would not compile. In a package named after the enum, the one
+`ENUM_DEDICATED_PACKAGE` asks for, there is nothing to clash with, and the
+prefix only repeats the name of the enum in every generated identifier.
+
+The rule looks only at files that declare only enums and whose package has the
+name of the enum as its last component, in any case style, so it never asks to
+drop a prefix where values could clash; enums elsewhere are left to
+`ENUM_DEDICATED_PACKAGE` first. The prefix is the UPPER_SNAKE_CASE form of the
+enum name followed by an underscore, as for the builtin rule: `ORDER_STATUS_`
+for `OrderStatus`.
+
+```proto
+// status.proto: flagged, the package is the enum's own
+package acme.v1.status;
+
+enum Status {
+  STATUS_UNSPECIFIED = 0;
+  STATUS_ACTIVE = 1;
+}
+```
+
+```proto
+// status.proto: ok
+package acme.v1.status;
+
+enum Status {
+  UNSPECIFIED = 0;
+  ACTIVE = 1;
+}
+```
+
+```
+acme/v1/status.proto:6:3:Enum value name "STATUS_UNSPECIFIED" should not be prefixed with "STATUS_", such as "UNSPECIFIED".
+acme/v1/status.proto:7:3:Enum value name "STATUS_ACTIVE" should not be prefixed with "STATUS_", such as "ACTIVE".
+```
+
+The annotation is attached to the value, so a single value can be exempted
+with `// buf:lint:ignore ENUM_VALUE_NO_PREFIX` on the line above it, for a
+value such as `COLOR_BLIND` in an enum `Color` that happens to start with the
+name of the enum.
+
+The rule contradicts `ENUM_VALUE_PREFIX`, which is part of the `STANDARD`
+category, so list that rule in `lint.except` when using it. The zero value
+becomes `UNSPECIFIED`, which the builtin `ENUM_ZERO_VALUE_SUFFIX` rejects with
+its default suffix `_UNSPECIFIED`, so set `enum_zero_value_suffix` to
+`UNSPECIFIED` under `lint` as well.
+
+The rule is off by default. Enable it by listing `ENUM_VALUE_NO_PREFIX` in
 `lint.use`.
 
 ### FILE_LOWER_KEBAB_CASE
@@ -504,8 +575,8 @@ GOOS=wasip1 GOARCH=wasm go build -o buf-plugin-lint-extra.wasm ./cmd/buf-plugin-
 
 Rules live in [internal/rules](internal/rules). Each rule is a function from
 a `fileSummary`, the few facts about a file that the rules look at, to
-annotations, or, for `DIRECTORY_SAME_PACKAGE_EXTRA`, from the summaries of
-all the files of a request. It is registered as a `check.RuleSpec` of
+annotations, or, for `DIRECTORY_SAME_PACKAGE_EXTRA` and
+`ENUM_DEDICATED_PACKAGE`, from the summaries of all the files of a request. It is registered as a `check.RuleSpec` of
 [bufplugin-go](https://github.com/bufbuild/bufplugin-go) and covered by
 `checktest` tests that compile the `.proto` fixtures under
 [internal/rules/testdata](internal/rules/testdata) and compare the produced

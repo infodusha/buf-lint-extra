@@ -1,0 +1,11 @@
+syntax = "proto3";
+
+package app.test.theme;
+
+enum Theme {
+  THEME_UNSPECIFIED = 0;
+}
+
+message ThemeConfig {
+  Theme theme = 1;
+}

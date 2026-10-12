@@ -37,7 +37,7 @@ func (request checkRequest) enables(r rule) bool {
 type fileSummary struct {
 	name        string
 	pkg         string
-	enums       []string
+	enums       []enumSummary
 	nestedEnums []nestedEnum
 	messages    int
 	services    int
@@ -48,8 +48,20 @@ func (file fileSummary) declaresOnlyEnums() bool {
 	return len(file.enums) > 0 && file.messages == 0 && file.services == 0 && file.extensions == 0
 }
 
-func (file fileSummary) declaresEnumNamed(name string) bool {
-	return slices.ContainsFunc(file.enums, func(enum string) bool { return sameWords(enum, name) })
+// dedicatedEnum returns the index of the enum the package of file is named
+// after, the one ENUM_DEDICATED_PACKAGE asks for, or -1 when file declares
+// anything but enums or none of them is named after the last component.
+func (file fileSummary) dedicatedEnum() int {
+	if !file.declaresOnlyEnums() {
+		return -1
+	}
+	_, last := splitLastComponent(file.pkg)
+	return slices.IndexFunc(file.enums, func(enum enumSummary) bool { return sameWords(enum.name, last) })
+}
+
+type enumSummary struct {
+	name   string
+	values []string
 }
 
 type nestedEnum struct {

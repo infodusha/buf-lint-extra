@@ -1,0 +1,5 @@
+syntax = "proto3";
+
+enum Status {
+  STATUS_UNSPECIFIED = 0;
+}

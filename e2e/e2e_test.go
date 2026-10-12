@@ -91,6 +91,13 @@ var expectedAnnotations = []annotation{
 		Message:     `File "acme/v1/kind.proto" declares top-level enums and must have a name ending in "-enums.proto", such as "acme/v1/kind-enums.proto".`,
 	},
 	{
+		Path:        "acme/v1/kind.proto",
+		StartLine:   6,
+		StartColumn: 3,
+		Type:        "ENUM_VALUE_NO_PREFIX",
+		Message:     `Enum value name "KIND_UNSPECIFIED" should not be prefixed with "KIND_", such as "UNSPECIFIED".`,
+	},
+	{
 		Path:        "acme/v1/levels/level-enums.proto",
 		StartLine:   5,
 		StartColumn: 1,
@@ -117,6 +124,13 @@ var expectedAnnotations = []annotation{
 		StartColumn: 1,
 		Type:        "FILE_LOWER_KEBAB_CASE",
 		Message:     `Filename "order_item.proto" should be lower-kebab-case.proto, such as "order-item.proto".`,
+	},
+	{
+		Path:        "acme/v1/priority/stats.proto",
+		StartLine:   3,
+		StartColumn: 1,
+		Type:        "ENUM_DEDICATED_PACKAGE",
+		Message:     `Package "acme.v1.priority" is dedicated to enum "Priority" declared in "acme/v1/priority-enums.proto", so this file must be in another package.`,
 	},
 	{
 		Path:        "acme/v1/user.proto",
