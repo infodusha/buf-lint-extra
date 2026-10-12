@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.9.0](https://github.com/infodusha/buf-lint-extra/compare/v0.8.0...v0.9.0) (2026-10-12)
+
+
+### ⚠ BREAKING CHANGES
+
+* the package_directory_enum_component option is removed. The enum's package component is left out of the directory exactly when ENUM_DEDICATED_PACKAGE is enabled; the option is now ignored if set.
+
+### Features
+
+* add ENUM_VALUE_NO_PREFIX and keep other files out of dedicated enum packages ([13f0ab3](https://github.com/infodusha/buf-lint-extra/commit/13f0ab36a6beedd15254d8300e0b119b7df70908))
+* derive the enum component layout from ENUM_DEDICATED_PACKAGE ([8487f96](https://github.com/infodusha/buf-lint-extra/commit/8487f96af6fed19b6b6b17bb5673bf731f70a4b6))
+
 ## [0.8.0](https://github.com/infodusha/buf-lint-extra/compare/v0.7.0...v0.8.0) (2026-10-09)
 
 
