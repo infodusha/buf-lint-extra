@@ -8,12 +8,12 @@ require (
 	buf.build/go/protovalidate v1.4.0
 	github.com/stretchr/testify v1.12.1
 	google.golang.org/protobuf v1.36.12
-	pluginrpc.com/pluginrpc v0.5.1-0.20260825152034-473fc805d0d1
+	pluginrpc.com/pluginrpc v0.6.0
 )
 
 require (
 	buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go v1.36.12-20260825204119-511051f7f437.1 // indirect
-	buf.build/gen/go/pluginrpc/pluginrpc/protocolbuffers/go v1.36.12-20241007202033-cf42259fcbfc.1 // indirect
+	buf.build/gen/go/pluginrpc/pluginrpc/protocolbuffers/go v1.36.12-20241007202033-cf42259fcbfc.2 // indirect
 	buf.build/go/spdx v0.2.0 // indirect
 	cel.dev/cel-go v0.32.0 // indirect
 	cel.dev/expr v0.25.3 // indirect
