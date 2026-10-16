@@ -1,0 +1,8 @@
+syntax = "proto2";
+
+package app.test.status;
+
+enum Status {
+  ACTIVE = 1;
+  DELETED = 2;
+}

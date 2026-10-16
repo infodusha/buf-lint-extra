@@ -11,6 +11,7 @@ Extra lint rules for [buf](https://buf.build), packaged as a
 | `ENUM_FILE_MATCH`               | off     | Files that declare only enums are named after the enum, in any case style, with or without the enum file suffix.                                                                                                      |
 | `ENUM_FILE_SUFFIX`              | off     | Files that declare top-level enums have a name ending in a suffix (`_enum` by default), and files with that suffix declare top-level enums.                                                                           |
 | `ENUM_VALUE_NO_PREFIX`          | off     | Values of an enum in a package of its own are not prefixed with the name of the enum, the inverse of the builtin `ENUM_VALUE_PREFIX`, since there is nothing in the package for them to clash with.                   |
+| `ENUM_ZERO_VALUE`               | off     | The zero value of every enum, top-level or nested, has one name (`UNSPECIFIED` by default): the builtin `ENUM_ZERO_VALUE_SUFFIX` with the whole name compared rather than a suffix, so `STATUS_UNSPECIFIED` fails.    |
 | `FILE_LOWER_KEBAB_CASE`         | off     | File names are lower-kebab-case in each dot-separated segment, such as `user-service.proto` or `user-status.enum.proto`.                                                                                              |
 | `PACKAGE_CAMEL_CASE`            | off     | Package names are camelCase: every dot-separated component starts with a lowercase letter and contains no underscores.                                                                                                |
 | `PACKAGE_DIRECTORY_MATCH_EXTRA` | off     | Files are in the directory matching their package, like the builtin rule, with options to exclude prefixes and convert the case, and with the enum's own component left out when `ENUM_DEDICATED_PACKAGE` is enabled. |
@@ -100,12 +101,13 @@ lint:
     - PACKAGE_VERSION_SUFFIX # contradicts ENUM_DEDICATED_PACKAGE
     - PACKAGE_LOWER_SNAKE_CASE # replaced by PACKAGE_CAMEL_CASE
     - FILE_LOWER_SNAKE_CASE # replaced by FILE_LOWER_KEBAB_CASE
-    - ENUM_VALUE_PREFIX # contradicts ENUM_VALUE_NO_PREFIX
-  enum_zero_value_suffix: UNSPECIFIED # ENUM_VALUE_NO_PREFIX leaves the zero value as UNSPECIFIED
+    - ENUM_VALUE_PREFIX # contradicts ENUM_VALUE_NO_PREFIX and ENUM_ZERO_VALUE
+    - ENUM_ZERO_VALUE_SUFFIX # replaced by ENUM_ZERO_VALUE
 plugins:
   - plugin: buf-plugin-lint-extra
     options:
       enum_file_suffix: -enum # optional, the default is _enum
+      enum_zero_value: UNKNOWN # optional, the default is UNSPECIFIED
       package_directory_excluded_prefixes: # optional, empty by default
         - acme.v1
       package_directory_case: lower-kebab-case # optional, components are used as is by default
@@ -124,8 +126,7 @@ Everything else works as for the builtin rules: `except`, `ignore`,
 
 Every rule in `lint.except` above is part of `STANDARD` and clashes with a
 rule of the plugin, as described in the section of that rule; list only the
-entries for the plugin rules in use, and `enum_zero_value_suffix` only with
-`ENUM_VALUE_NO_PREFIX`. The plugin cannot report such clashes
+entries for the plugin rules in use. The plugin cannot report such clashes
 itself: `buf` sends a plugin only the IDs of its own enabled rules, not the
 builtin ones, and not the path of `buf.yaml`; see
 [bufbuild/buf#4722](https://github.com/bufbuild/buf/issues/4722).
@@ -411,10 +412,58 @@ name of the enum.
 The rule contradicts `ENUM_VALUE_PREFIX`, which is part of the `STANDARD`
 category, so list that rule in `lint.except` when using it. The zero value
 becomes `UNSPECIFIED`, which the builtin `ENUM_ZERO_VALUE_SUFFIX` rejects with
-its default suffix `_UNSPECIFIED`, so set `enum_zero_value_suffix` to
-`UNSPECIFIED` under `lint` as well.
+its default suffix `_UNSPECIFIED`, so either set `enum_zero_value_suffix` to
+`UNSPECIFIED` under `lint` as well, or replace that rule with
+`ENUM_ZERO_VALUE`, which asks for the whole name.
 
 The rule is off by default. Enable it by listing `ENUM_VALUE_NO_PREFIX` in
+`lint.use`.
+
+### ENUM_ZERO_VALUE
+
+Checks that the zero value of every enum, top-level or nested, has one name,
+`UNSPECIFIED` by default. This is the builtin `ENUM_ZERO_VALUE_SUFFIX` with
+the whole name compared rather than a suffix: that rule accepts any name
+ending in its suffix, so with the suffix set to `UNSPECIFIED`, as
+`ENUM_VALUE_NO_PREFIX` calls for, it accepts `STATUS_UNSPECIFIED` along with
+`UNSPECIFIED`, where this rule accepts only `UNSPECIFIED`. Override the name
+with the `enum_zero_value` option.
+
+Every value with the number 0 is checked, so with `allow_alias` each alias of
+the zero value needs the name. An enum without a zero value, which proto2
+permits, is not checked.
+
+```proto
+// flagged
+enum Status {
+  STATUS_UNSPECIFIED = 0;
+  ACTIVE = 1;
+}
+```
+
+```proto
+// ok
+enum Status {
+  UNSPECIFIED = 0;
+  ACTIVE = 1;
+}
+```
+
+```
+acme/v1/status.proto:6:3:Enum zero value name "STATUS_UNSPECIFIED" should be "UNSPECIFIED".
+```
+
+The annotation is attached to the value, so a single value can be exempted
+with `// buf:lint:ignore ENUM_ZERO_VALUE` on the line above it.
+
+The rule replaces `ENUM_ZERO_VALUE_SUFFIX`, which is part of the `STANDARD`
+category, so list that rule in `lint.except` when using it, or the builtin
+rule keeps asking for its suffix. The name leaves no room for the prefix that
+`ENUM_VALUE_PREFIX`, also part of `STANDARD`, asks for, so list that rule in
+`lint.except` as well: the rule is meant for enums in packages of their own,
+where `ENUM_VALUE_NO_PREFIX` drops the prefix from the other values.
+
+The rule is off by default. Enable it by listing `ENUM_ZERO_VALUE` in
 `lint.use`.
 
 ### FILE_LOWER_KEBAB_CASE

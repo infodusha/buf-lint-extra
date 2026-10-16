@@ -28,22 +28,17 @@ func checkEnumValueNoPrefix(file fileSummary, _ checkRequest) ([]annotation, err
 	prefix := toUpperSnakeCase(enum.name) + "_"
 	var annotations []annotation
 	for j, value := range enum.values {
-		rest, ok := strings.CutPrefix(value, prefix)
+		rest, ok := strings.CutPrefix(value.name, prefix)
 		if !ok {
 			continue
 		}
-		message := fmt.Sprintf("Enum value name %q should not be prefixed with %q", value, prefix)
+		message := fmt.Sprintf("Enum value name %q should not be prefixed with %q", value.name, prefix)
 		if rest != "" {
 			message += fmt.Sprintf(", such as %q", rest)
 		}
 		annotations = append(annotations, annotation{
-			message: message + ".",
-			sourcePath: []int32{
-				int32(fileDescriptorProtoEnumType.number),
-				int32(i),
-				int32(enumDescriptorProtoValue.number),
-				int32(j),
-			},
+			message:    message + ".",
+			sourcePath: enumValueSourcePath(topLevelEnumSourcePath(i), j),
 		})
 	}
 	return annotations, nil

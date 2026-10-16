@@ -1,0 +1,20 @@
+syntax = "proto3";
+
+package app.test;
+
+message User {
+  enum Role {
+    ROLE_UNSPECIFIED = 0;
+  }
+
+  message Settings {
+    enum Theme {
+      THEME_UNSPECIFIED = 0;
+    }
+
+    Theme theme = 1;
+  }
+
+  Role role = 1;
+  Settings settings = 2;
+}

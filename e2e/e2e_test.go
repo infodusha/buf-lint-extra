@@ -77,6 +77,20 @@ var expectedAnnotations = []annotation{
 		Message:     `Package name "acme.user_service.v1" should be camelCase, such as "acme.userService.v1".`,
 	},
 	{
+		Path:        "acme/v1/account.proto",
+		StartLine:   7,
+		StartColumn: 3,
+		Type:        "ENUM_ZERO_VALUE",
+		Message:     `Enum zero value name "PLAN_UNSPECIFIED" should be "UNSPECIFIED".`,
+	},
+	{
+		Path:        "acme/v1/account.proto",
+		StartLine:   13,
+		StartColumn: 5,
+		Type:        "ENUM_ZERO_VALUE",
+		Message:     `Enum zero value name "TIER_UNSPECIFIED" should be "UNSPECIFIED".`,
+	},
+	{
 		Path:        "acme/v1/color-enums.proto",
 		StartLine:   1,
 		StartColumn: 1,
@@ -98,11 +112,25 @@ var expectedAnnotations = []annotation{
 		Message:     `Enum value name "KIND_UNSPECIFIED" should not be prefixed with "KIND_", such as "UNSPECIFIED".`,
 	},
 	{
+		Path:        "acme/v1/kind.proto",
+		StartLine:   6,
+		StartColumn: 3,
+		Type:        "ENUM_ZERO_VALUE",
+		Message:     `Enum zero value name "KIND_UNSPECIFIED" should be "UNSPECIFIED".`,
+	},
+	{
 		Path:        "acme/v1/levels/level-enums.proto",
 		StartLine:   5,
 		StartColumn: 1,
 		Type:        "ENUM_DEDICATED_PACKAGE",
 		Message:     `Enum "Level" must be declared in a package named after it, such as "acme.v1.level", but the package is "acme.v1.levels".`,
+	},
+	{
+		Path:        "acme/v1/levels/level-enums.proto",
+		StartLine:   6,
+		StartColumn: 3,
+		Type:        "ENUM_ZERO_VALUE",
+		Message:     `Enum zero value name "LEVEL_UNSPECIFIED" should be "UNSPECIFIED".`,
 	},
 	{
 		Path:        "acme/v1/misc-enums.proto",
@@ -117,6 +145,13 @@ var expectedAnnotations = []annotation{
 		StartColumn: 3,
 		Type:        "ENUM_DEDICATED_FILE",
 		Message:     `Enum "Order.State" must be declared at the top level of a file of its own, not nested in message "Order".`,
+	},
+	{
+		Path:        "acme/v1/order.proto",
+		StartLine:   7,
+		StartColumn: 5,
+		Type:        "ENUM_ZERO_VALUE",
+		Message:     `Enum zero value name "STATE_UNSPECIFIED" should be "UNSPECIFIED".`,
 	},
 	{
 		Path:        "acme/v1/order_item.proto",
@@ -145,6 +180,13 @@ var expectedAnnotations = []annotation{
 		StartColumn: 1,
 		Type:        "ENUM_DEDICATED_FILE",
 		Message:     `Enum "Status" must be declared in a file of its own, but this file also declares 1 message.`,
+	},
+	{
+		Path:        "acme/v1/user.proto",
+		StartLine:   6,
+		StartColumn: 3,
+		Type:        "ENUM_ZERO_VALUE",
+		Message:     `Enum zero value name "STATUS_UNSPECIFIED" should be "UNSPECIFIED".`,
 	},
 }
 

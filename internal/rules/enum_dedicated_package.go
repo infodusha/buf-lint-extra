@@ -80,7 +80,7 @@ func enumDedicatedPackageAnnotations(file fileSummary, request checkRequest) []a
 				quotedAlternatives(packages),
 				file.pkg,
 			),
-			sourcePath: []int32{int32(fileDescriptorProtoEnumType.number), int32(i)},
+			sourcePath: topLevelEnumSourcePath(i),
 		})
 	}
 	return annotations

@@ -15,6 +15,7 @@ var allRules = []rule{
 	enumFileMatchRule,
 	enumFileSuffixRule,
 	enumValueNoPrefixRule,
+	enumZeroValueRule,
 	fileLowerKebabCaseRule,
 	packageCamelCaseRule,
 	packageDirectoryMatchExtraRule,
@@ -27,7 +28,7 @@ var Spec = &check.Spec{
 		Purpose: "Contains every rule of the plugin, so that lint.use can enable them all at once.",
 	}},
 	Info: &info.Spec{
-		Documentation: "Extra lint rules for buf: keeps enums in dedicated files and packages named after them, drops the enum name prefix from the values of such enums, checks naming conventions for enum files, file names, and packages, matches packages to directories with configurable prefixes and case, and keeps the files of a directory in one package with enum packages counted as their parent.",
+		Documentation: "Extra lint rules for buf: keeps enums in dedicated files and packages named after them, drops the enum name prefix from the values of such enums, names the zero value of every enum, checks naming conventions for enum files, file names, and packages, matches packages to directories with configurable prefixes and case, and keeps the files of a directory in one package with enum packages counted as their parent.",
 		SPDXLicenseID: "Apache-2.0",
 		LicenseURL:    "https://github.com/infodusha/buf-lint-extra/blob/main/LICENSE",
 	},

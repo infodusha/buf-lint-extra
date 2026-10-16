@@ -1,0 +1,11 @@
+syntax = "proto3";
+
+package app.test.status;
+
+enum Status {
+  option allow_alias = true;
+
+  UNSPECIFIED = 0;
+  STATUS_UNSPECIFIED = 0;
+  ACTIVE = 1;
+}

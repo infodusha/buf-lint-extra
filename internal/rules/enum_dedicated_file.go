@@ -33,7 +33,7 @@ func checkEnumDedicatedFile(file fileSummary, _ checkRequest) ([]annotation, err
 					enum.name,
 					others,
 				),
-				sourcePath: []int32{int32(fileDescriptorProtoEnumType.number), int32(i)},
+				sourcePath: topLevelEnumSourcePath(i),
 			})
 		}
 	}

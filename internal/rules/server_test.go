@@ -69,6 +69,7 @@ func TestServerMatchesSpec(t *testing.T) {
 					ruleIDs: ruleIDs,
 					options: map[string]any{
 						EnumFileSuffixOptionKey:                   "_enums",
+						EnumZeroValueOptionKey:                    "UNKNOWN",
 						PackageDirectoryExcludedPrefixesOptionKey: []string{"test", "legacy"},
 						PackageDirectoryCaseOptionKey:             "lower-kebab-case",
 					},

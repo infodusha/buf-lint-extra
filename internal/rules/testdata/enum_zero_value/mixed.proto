@@ -1,0 +1,21 @@
+syntax = "proto3";
+
+package app.test;
+
+enum Status {
+  STATUS_UNSPECIFIED = 0;
+}
+
+enum Kind {
+  UNSPECIFIED = 0;
+}
+
+message User {
+  enum Role {
+    UNSPECIFIED = 0;
+  }
+
+  Status status = 1;
+  Kind kind = 2;
+  Role role = 3;
+}

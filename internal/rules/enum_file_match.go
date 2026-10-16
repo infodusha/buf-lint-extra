@@ -54,7 +54,7 @@ func checkEnumFileMatch(file fileSummary, request checkRequest) ([]annotation, e
 				quotedAlternatives(files),
 				file.name,
 			),
-			sourcePath: []int32{int32(fileDescriptorProtoEnumType.number), int32(i)},
+			sourcePath: topLevelEnumSourcePath(i),
 		})
 	}
 	return annotations, nil

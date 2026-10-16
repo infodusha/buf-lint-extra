@@ -61,11 +61,16 @@ func (file fileSummary) dedicatedEnum() int {
 
 type enumSummary struct {
 	name   string
-	values []string
+	values []enumValueSummary
+}
+
+type enumValueSummary struct {
+	name   string
+	number int32
 }
 
 type nestedEnum struct {
-	name       string
+	enumSummary
 	message    string
 	sourcePath []int32
 }
@@ -156,4 +161,12 @@ func qualifiedName(scope, name string) string {
 
 func childSourcePath(parent []int32, f field, index int) []int32 {
 	return append(slices.Clip(parent), int32(f.number), int32(index))
+}
+
+func topLevelEnumSourcePath(index int) []int32 {
+	return []int32{int32(fileDescriptorProtoEnumType.number), int32(index)}
+}
+
+func enumValueSourcePath(enum []int32, index int) []int32 {
+	return childSourcePath(enum, enumDescriptorProtoValue, index)
 }

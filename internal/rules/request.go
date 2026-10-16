@@ -33,7 +33,8 @@ var (
 	enumDescriptorProtoName  = field{1, protowire.BytesType}
 	enumDescriptorProtoValue = field{2, protowire.BytesType}
 
-	enumValueDescriptorProtoName = field{1, protowire.BytesType}
+	enumValueDescriptorProtoName   = field{1, protowire.BytesType}
+	enumValueDescriptorProtoNumber = field{2, protowire.VarintType}
 )
 
 type rawCheckRequest struct {
@@ -145,10 +146,11 @@ func parseDescriptorProtoNestedEnums(
 		if err != nil {
 			return nil, err
 		}
+		enum.name = qualifiedName(name, enum.name)
 		nestedEnums = append(nestedEnums, nestedEnum{
-			name:       qualifiedName(name, enum.name),
-			message:    name,
-			sourcePath: childSourcePath(sourcePath, descriptorProtoEnumType, i),
+			enumSummary: enum,
+			message:     name,
+			sourcePath:  childSourcePath(sourcePath, descriptorProtoEnumType, i),
 		})
 	}
 	for i, message := range messages {
@@ -172,26 +174,30 @@ func parseEnumDescriptorProto(data []byte) (enumSummary, error) {
 		case enumDescriptorProtoName:
 			enum.name = string(value)
 		case enumDescriptorProtoValue:
-			name, err := parseEnumValueDescriptorProtoName(value)
+			enumValue, err := parseEnumValueDescriptorProto(value)
 			if err != nil {
 				return err
 			}
-			enum.values = append(enum.values, name)
+			enum.values = append(enum.values, enumValue)
 		}
 		return nil
 	})
 	return enum, err
 }
 
-func parseEnumValueDescriptorProtoName(data []byte) (string, error) {
-	var name string
+func parseEnumValueDescriptorProto(data []byte) (enumValueSummary, error) {
+	var enumValue enumValueSummary
 	err := rangeFields(data, func(f field, value []byte) error {
-		if f == enumValueDescriptorProtoName {
-			name = string(value)
+		switch f {
+		case enumValueDescriptorProtoName:
+			enumValue.name = string(value)
+		case enumValueDescriptorProtoNumber:
+			v, _ := protowire.ConsumeVarint(value)
+			enumValue.number = int32(v)
 		}
 		return nil
 	})
-	return name, err
+	return enumValue, err
 }
 
 func rangeFields(data []byte, fn func(f field, value []byte) error) error {
