@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.10.0](https://github.com/infodusha/buf-lint-extra/compare/v0.9.0...v0.10.0) (2026-10-16)
+
+
+### Features
+
+* add ENUM_ZERO_VALUE to check the whole name of enum zero values ([55877e8](https://github.com/infodusha/buf-lint-extra/commit/55877e872a9c3b023b3ad0584f168d1796037986))
+
 ## [0.9.0](https://github.com/infodusha/buf-lint-extra/compare/v0.8.0...v0.9.0) (2026-10-12)
 
 
