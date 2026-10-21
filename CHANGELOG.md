@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.10.1](https://github.com/infodusha/buf-lint-extra/compare/v0.10.0...v0.10.1) (2026-10-21)
+
+
+### Bug Fixes
+
+* **deps:** bump pluginrpc.com/pluginrpc ([ebda967](https://github.com/infodusha/buf-lint-extra/commit/ebda967ed5c831340f9fe353e098dd75ef74a143))
+* **deps:** bump pluginrpc.com/pluginrpc from 0.5.1-0.20260825152034-473fc805d0d1 to 0.6.0 in the go group ([#19](https://github.com/infodusha/buf-lint-extra/issues/19)) ([886fc31](https://github.com/infodusha/buf-lint-extra/commit/886fc3182050e0678277daa6def8c4147147cd22))
+
 ## [0.10.0](https://github.com/infodusha/buf-lint-extra/compare/v0.9.0...v0.10.0) (2026-10-16)
 
 
